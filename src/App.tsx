@@ -1,39 +1,32 @@
-import { useDispatch, useSelector } from "react-redux";
-import { decrement, increment } from "./stores/counterSlice";
-import { Routes, Route, Link } from "react-router-dom";
-import Login from "./views/login/Login";
-import Register from "./views/register/Register";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  type RouteObject,
+} from "react-router-dom";
+import Default from "./views/layouts/Default";
+import React from "react";
+import { PATH_CONSTRAINT } from "./routers";
 
 function App() {
-  const count = useSelector((state) => state.counter.value);
+  const Login = React.lazy(() => import("./views/login/Login"));
+  const Chat = React.lazy(() => import("./views/chat/Chat"));
+  const Register = React.lazy(() => import("./views/register/Register"));
 
-  const dispatch = useDispatch();
-  return (
-    <>
-      <h1>Count: {count}</h1>
-      <button
-        className="p-2 bg-amber-600"
-        onClick={() => dispatch(increment())}
-      >
-        +
-      </button>
-      <button onClick={() => dispatch(decrement())}>-</button>
-      <div>Test</div>
-      <div>Hello</div>
+  const routes: RouteObject[] = [
+    { path: PATH_CONSTRAINT.HOME, element: <Login /> },
+    { path: PATH_CONSTRAINT.LOGIN, element: <Login /> },
+    { path: PATH_CONSTRAINT.CHAT, element: <Chat /> },
+    { path: PATH_CONSTRAINT.REGISTER, element: <Register /> },
+  ];
 
-      <nav style={{ display: "flex", gap: 16 }}>
-        <Link to="/">Login</Link>
-        <Link to="/register">Register</Link>
-      </nav>
+  const router = createBrowserRouter([
+    {
+      element: <Default />,
+      children: routes,
+    },
+  ]);
 
-      <hr />
-
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
