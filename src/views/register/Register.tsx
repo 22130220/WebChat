@@ -1,12 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { PATH_CONSTRAINT } from "../../routers";
 
 export default function Register() {
-  const navigate = useNavigate();
+  
 
   return (
     <>
       <h2>ℹ️ About Page</h2>
-      <button onClick={() => navigate("/")}>Go Home (useNavigate)</button>
+       <Link to={PATH_CONSTRAINT.HOME}>Go Home</Link>
     </>
   );
 }

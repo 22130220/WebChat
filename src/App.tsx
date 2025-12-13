@@ -22,6 +22,7 @@ function App() {
   const router = createBrowserRouter([
     {
       element: <Default />,
+      errorElement: <div>Đã có lỗi xảy ra</div>,
       children: routes,
     },
   ]);
