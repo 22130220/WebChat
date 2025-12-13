@@ -16,6 +16,7 @@ function App() {
       </button>
       <button onClick={() => dispatch(decrement())}>-</button>
       <div>Test</div>
+      <div>Hello</div>
     </div>
   );
 }
