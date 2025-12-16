@@ -34,7 +34,7 @@ export default function ChatMainInput({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message"
+              placeholder="Nhập tin nhắn"
               rows={1}
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
