@@ -1,12 +1,15 @@
-import { Link } from "react-router-dom";
-import { PATH_CONSTRAINT } from "../../routers";
+import ChatSidebar from "./partials/ChatSidebar";
+import ChatMain from "./partials/ChatMain";
+import ChatDirectory from "./partials/ChatDirectory";
 
-export default function Chat() {
+function Chat() {
   return (
-  <>Here is chat interface
-  <br/>
-  <Link to={PATH_CONSTRAINT.HOME}>Go Home</Link>
-  </>
-)
-   
+    <div className="flex h-screen">
+      <ChatSidebar />
+      <ChatMain />
+      <ChatDirectory />
+    </div>
+  );
 }
+export default Chat;
+
