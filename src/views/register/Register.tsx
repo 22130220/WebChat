@@ -5,7 +5,7 @@ import image from '../login/image.png';
 export default function Register() {
   return (
     <>
-      <div className="flex m-auto shadow-lg items-stretch h-[70vh]">
+      <div className="flex m-auto shadow-lg items-stretch h-screen">
         <div className="w-[70%] p-5 flex">
           <img src={backgroundleft} className="w-full h-full object-cover rounded-lg" alt="Image" />
         </div>
@@ -21,11 +21,6 @@ export default function Register() {
             <div className="flex flex-col ">
               <label htmlFor="username" className="font-bold text-sm text-left">Username:</label>
               <input type="text" className="mt-1 p-2 w-full bg-[#F2F2F2] rounded-md pr-10" placeholder="Username" />
-            </div>
-
-            <div className="flex flex-col">
-              <label htmlFor="email" className="font-bold text-sm text-left">Email:</label>
-              <input type="email" className="mt-1 p-2 w-full bg-[#F2F2F2] rounded-md pr-10" placeholder="you@example.com" />
             </div>
 
             <div className="flex flex-col">
