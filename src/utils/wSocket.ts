@@ -3,6 +3,11 @@ import pubSub from "./eventBus";
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
 let ws: WebSocket | null = null;
 function createSocket(path: string) {
+  console.log(
+    `%cWS:%c Creating WebSocket connection to ${path}`,
+    "color: #43a047; font-weight: bold;",
+    "color: #9e9e9e;"
+  );
   ws = new WebSocket(path)
 
   ws.onopen = () => {
