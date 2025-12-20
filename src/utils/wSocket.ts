@@ -1,3 +1,4 @@
+import { useEvent } from "../hooks/useEvent";
 import pubSub from "./eventBus";
 
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"

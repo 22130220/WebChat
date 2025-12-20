@@ -47,6 +47,13 @@ export default function Login() {
     navigate("/chat");
   }
 
+  useEvent("relogin_success", reLoginSuccess);
+
+  function reLoginSuccess(data: any) {
+    const RE_LOGIN_CODE = data.data.RE_LOGIN_CODE;
+    localStorage.setItem("RE_LOGIN_CODE", RE_LOGIN_CODE);
+  }
+
   return <>
     <div className="flex m-auto shadow-lg items-stretch h-screen rounded-lg overflow-hidden">
       <div className="w-[70%] p-5 flex h-full ">
