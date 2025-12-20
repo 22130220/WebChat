@@ -3,10 +3,26 @@ import pubSub from "./eventBus";
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
 let ws: WebSocket | null = null;
 function createSocket(path: string) {
+  console.log(
+    `%cWS:%c Creating WebSocket connection to ${path}`,
+    "color: #43a047; font-weight: bold;",
+    "color: #9e9e9e;"
+  );
   ws = new WebSocket(path)
 
   ws.onopen = () => {
     pubSub.publish("wsOpen", `Connected to ${path}`)
+    const loginPayload = {
+    action: "onchat",
+    data: {
+    event: "LOGIN",
+    data: {
+      user: "nguyen",
+      pass: "12345"
+    }
+  }
+}
+ wSocket.send(JSON.stringify(loginPayload));
   }
 
   ws.onmessage = (event: MessageEvent) => {
@@ -19,6 +35,7 @@ function createSocket(path: string) {
         switch (data.event) {
           case "LOGIN": {
             pubSub.publish("login_success", data);
+            pubSub.publish("getUserList", data);
             break;
           }
           case "RE_LOGIN": {
@@ -27,6 +44,7 @@ function createSocket(path: string) {
           }
           case "GET_USER_LIST": {
             pubSub.publish("user_list_success", data)
+            
             break;
           }
 
