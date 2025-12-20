@@ -1,29 +1,64 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 import ChatMainHeader from "./ChatMainHeader";
 import ChatMainPartial from "./ChatMainPartial";
 import ChatMainInput from "./ChatMainInput";
+import wSocket from "../../../utils/wSocket";
+import pubSub from "../../../utils/eventBus";
 
 const ChatMain: React.FC = () => {
   const [message, setMessage] = useState("");
-  const [messages] = useState<IChatMessage[]>([
-    { id: 1, text: "omg, this is amazing", sender: "other" },
-    { id: 2, text: "perfect! ✅", sender: "other" },
-    { id: 3, text: "Wow, this is really epic", sender: "other" },
-    { id: 4, text: "How are you?", sender: "user" },
-    { id: 5, text: "just ideas for next time", sender: "other" },
-    { id: 6, text: "I'll be there in 2 mins ⏰", sender: "other" },
-    { id: 7, text: "woohoooo", sender: "user" },
-    { id: 8, text: "Haha oh man", sender: "user" },
-    { id: 9, text: "Haha that's terrifying 😱", sender: "user" },
-    { id: 10, text: "aww", sender: "other" },
-    { id: 11, text: "omg, this is amazing", sender: "other" },
-    { id: 12, text: "woohoooo 🔥", sender: "other" },
-  ]);
+  const [messages, setMessages] = useState<IChatMessage[]>([]);
+
+  useEffect(() => {
+    const getPeopleChatMess = () => {
+      const getPeopleChatMessages = {
+        action: "onchat",
+        data: {
+          event: "GET_PEOPLE_CHAT_MES",
+          data: {
+            name: "phucdz2",
+            page: 1,
+          },
+        },
+      };
+      wSocket.send(JSON.stringify(getPeopleChatMessages));
+    };
+
+    const setPeopleChatMess = (data: any) => {
+      setMessages(data.data);
+    };
+
+    pubSub.subscribe("get_people_chat_messages", getPeopleChatMess);
+    pubSub.subscribe("get_people_chat_messages_success", setPeopleChatMess);
+  }, []);
 
   const handleSend = () => {
     if (message.trim()) {
-      console.log("Sending:", message);
+      const messagePayload = {
+        action: "onchat",
+        data: {
+          event: "SEND_CHAT",
+          data: {
+            type: "people",
+            to: `phucdz2`,
+            mes: `${message.trim()}`,
+          },
+        },
+      };
+      console.log(messagePayload);
+      wSocket.send(JSON.stringify(messagePayload));
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          to: "phucdz2",
+          mes: message.trim(),
+          name: "phucdz",
+          type: 0,
+          createAt: new Date().toISOString(),
+        } as IChatMessage,
+      ]);
       setMessage("");
     }
   };
@@ -53,4 +88,3 @@ const ChatMain: React.FC = () => {
 };
 
 export default ChatMain;
-

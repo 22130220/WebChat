@@ -7,6 +7,18 @@ function createSocket(path: string) {
 
   ws.onopen = () => {
     pubSub.publish("wsOpen", `Connected to ${path}`)
+    const loginPayload = {
+      action: "onchat",
+      data: {
+        event: "LOGIN",
+        data: {
+          user: "phucdz",
+          pass: "1901"
+        }
+      }
+    }
+
+    ws?.send(JSON.stringify(loginPayload))
   }
 
   ws.onmessage = (event: MessageEvent) => {
@@ -19,6 +31,7 @@ function createSocket(path: string) {
         switch (data.event) {
           case "LOGIN": {
             pubSub.publish("login_success", data);
+            pubSub.publish("get_people_chat_messages", null)
             break;
           }
           case "RE_LOGIN": {
@@ -28,6 +41,9 @@ function createSocket(path: string) {
           case "GET_USER_LIST": {
             pubSub.publish("user_list_success", data)
             break;
+          }
+          case "GET_PEOPLE_CHAT_MES": {
+            pubSub.publish("get_people_chat_messages_success", data)
           }
 
         }
