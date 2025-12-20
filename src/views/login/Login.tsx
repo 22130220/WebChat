@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEvent } from '../../hooks/useEvent';
 import wSocket from '../../utils/wSocket';
-import backgroundleft from './backgroundLeft.png';
-import image from './image.png';
-import NotificationModal from '../register/NotificationModal';
-import CheckConnection from '../register/CheckConnection';
+import backgroundleft from '../../assets/backgroundLeft.png';
+import image from '../../assets/image.png';
+import NotificationModal from '../../common/NotificationModal';
+import CheckConnection from '../../common/CheckConnection';
 
 export default function Login() {
   const [userName, setUserName] = useState("");

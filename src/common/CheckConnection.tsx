@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useEvent } from "../../hooks/useEvent";
-import wSocket from "../../utils/wSocket";
+import { useEvent } from "../hooks/useEvent";
+import wSocket from "../utils/wSocket";
 
 function CheckConnection() {
     const rs = wSocket.readyState();
