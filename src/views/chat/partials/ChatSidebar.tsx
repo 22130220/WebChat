@@ -23,6 +23,19 @@ const ChatSidebar = () => {
     wSocket.send(JSON.stringify(getUserListPayload))
   }, []);
 
+  function fetchUserList() {
+     console.log("ChatSidebar mounted, requesting user list");
+    const getUserListPayload = {
+      action: "onchat",
+      data: {
+        event: "GET_USER_LIST"
+      }
+    }
+    wSocket.send(JSON.stringify(getUserListPayload))
+  }
+
+  useEvent("getUserList",fetchUserList);
+
   function getUserListHandler(data: any) {
     console.log("Received user list:", data);
 
