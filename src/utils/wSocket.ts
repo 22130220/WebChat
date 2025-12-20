@@ -1,4 +1,3 @@
-import { useEvent } from "../hooks/useEvent";
 import pubSub from "./eventBus";
 
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
@@ -25,6 +24,7 @@ function createSocket(path: string) {
           }
           case "LOGIN": {
             pubSub.publish("login_success", data);
+            pubSub.publish("get_people_chat_messages", null)
             break;
           }
           case "RE_LOGIN": {
@@ -33,6 +33,10 @@ function createSocket(path: string) {
           }
           case "GET_USER_LIST": {
             pubSub.publish("user_list_success", data)
+            break;
+          }
+          case "GET_PEOPLE_CHAT_MES": {
+            pubSub.publish("get_people_chat_messages_success", data)
             break;
           }
         }
@@ -111,9 +115,9 @@ const wSocket = {
 function checkUserCode() {
   const RE_LOGIN_CODE = localStorage.getItem("RE_LOGIN_CODE");
   const USER_NAME = localStorage.getItem("USER_NAME");
- 
+
   console.log("RE_LOGIN_CODE:", RE_LOGIN_CODE, "USER_NAME:", USER_NAME);
-  
+
   if (RE_LOGIN_CODE && USER_NAME) {
     const reLoginPayload = {
       action: "onchat",
