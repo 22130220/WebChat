@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEvent } from '../../hooks/useEvent';
+import wSocket from '../../utils/wSocket';
 import backgroundleft from './backgroundLeft.png';
 import image from './image.png';
-import wSocket from '../../utils/wSocket';
+import NotificationModal from '../register/NotificationModal';
+import CheckConnection from '../register/CheckConnection';
 
 export default function Login() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSignIn = () => {
     if (!userName || !password) {
@@ -18,18 +24,28 @@ export default function Login() {
       action: "onchat",
       data: {
         event: "LOGIN",
-        user: userName,
-        pass: password
+        data: {
+          user: userName,
+          pass: password
+        }
       }
     };
-    console.log('Signing in with payload:', loginPayload);
-    const result = wSocket.send(JSON.stringify(loginPayload));
-    if (result !== undefined) {
-      console.log("Login payload sent successfully.");
-    } else {
-      console.log("Failed to send login payload.");
-    }
+    wSocket.send(JSON.stringify(loginPayload));
   };
+
+  useEvent("login_success", loginsuccess);
+
+  function loginsuccess(data: any) {
+    const RE_LOGIN_CODE = data.data.RE_LOGIN_CODE;
+    localStorage.setItem("USER_NAME", userName);
+    localStorage.setItem("RE_LOGIN_CODE", RE_LOGIN_CODE);
+    setNotificationMessage(`Welcome back, ${userName}! You have logged in successfully.`);
+    setShowNotification(true);
+  }
+
+  function handlePageChat() {
+    navigate("/chat");
+  }
 
   return <>
     <div className="flex m-auto shadow-lg items-stretch h-screen rounded-lg overflow-hidden">
@@ -46,7 +62,7 @@ export default function Login() {
           <div className="flex font-medium text- flex-col">
             <div className="flex flex-col mt-4">
               <label htmlFor="username" className='font-bold text-sm text-left'>Username:</label>
-              <input type="text" className='mt-1 p-2 w-full  rounded-md pr-10 bg-[#F2F2F2]' placeholder="Username" value={userName} />
+              <input type="text" className='mt-1 p-2 w-full  rounded-md pr-10 bg-[#F2F2F2]' placeholder="Username" value={userName} onChange={(event) => setUserName(event.target.value)} />
             </div>
             <div className='flex flex-col mt-4'>
               <label htmlFor="password" className='block text-sm font-bold text-black-800 text-left '>
@@ -56,9 +72,10 @@ export default function Login() {
                 <input type="password" id="password"
                   placeholder="Enter your Password"
                   required name="password"
-                  className="mt-1 p-2 w-full  rounded-md pr-10 bg-[#F2F2F2] " 
+                  className="mt-1 p-2 w-full  rounded-md pr-10 bg-[#F2F2F2] "
                   value={password}
-                  />
+                  onChange={(event) => setPassword(event.target.value)}
+                />
                 <button type="button" id="togglePassword"
                   className="focus:outline-none -ml-8">
                 </button>
@@ -86,6 +103,7 @@ export default function Login() {
         </div>
       </div>
     </div>
-
+    {showNotification && <NotificationModal message={notificationMessage} returnPage={handlePageChat} />}
+    <CheckConnection />
   </>
 }
