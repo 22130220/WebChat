@@ -7,16 +7,21 @@ function createSocket(path: string) {
 
   ws.onopen = () => {
     pubSub.publish("wsOpen", `Connected to ${path}`)
+    checkUserCode();
   }
 
   ws.onmessage = (event: MessageEvent) => {
     const data = JSON.parse(event.data);
+    console.log("Received WebSocket message:", data);
     pubSub.publish("wsMessage", event.data)
-
 
     switch (data.status) {
       case "success": {
         switch (data.event) {
+          case "REGISTER": {
+            pubSub.publish("register_success", data);
+            break;
+          }
           case "LOGIN": {
             pubSub.publish("login_success", data);
             break;
@@ -29,7 +34,17 @@ function createSocket(path: string) {
             pubSub.publish("user_list_success", data)
             break;
           }
-
+        }
+        break;
+      }
+      case "error": {
+        switch (data.event) {
+          case "RE_LOGIN": {
+            window.localStorage.removeItem("RE_LOGIN_CODE");
+            window.localStorage.removeItem("USER_NAME");
+            window.location.href = "/login";
+            break;
+          }
         }
         break;
       }
@@ -46,7 +61,6 @@ function createSocket(path: string) {
   }
 
 }
-
 
 function send(msg: string) {
   if (ws?.readyState == WebSocket.CONNECTING || ws?.readyState == WebSocket.CLOSED) {
@@ -88,6 +102,30 @@ createSocket(defaultWsPath);
 
 const wSocket = {
   send, close, readyState
+}
+
+/*
+* Tai
+*/
+function checkUserCode() {
+  const RE_LOGIN_CODE = localStorage.getItem("RE_LOGIN_CODE");
+  const USER_NAME = localStorage.getItem("USER_NAME");
+ 
+  console.log("RE_LOGIN_CODE:", RE_LOGIN_CODE, "USER_NAME:", USER_NAME);
+  
+  if (RE_LOGIN_CODE && USER_NAME) {
+    const reLoginPayload = {
+      action: "onchat",
+      data: {
+        event: "RE_LOGIN",
+        data: {
+          user: USER_NAME,
+          code: RE_LOGIN_CODE
+        }
+      }
+    };
+    wSocket.send(JSON.stringify(reLoginPayload));
+  }
 }
 
 export default wSocket;
