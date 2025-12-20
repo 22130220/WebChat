@@ -5,7 +5,7 @@ export default function Layout() {
   return (
     <>
       <main>
-        <Suspense fallback={<div>Đang load</div>}>
+        <Suspense>
           <Outlet />
         </Suspense>
       </main>

@@ -1,5 +1,6 @@
 import {
   createBrowserRouter,
+  redirect,
   RouterProvider,
   type RouteObject,
 } from "react-router-dom";
@@ -14,10 +15,20 @@ function App() {
 
   const routes: RouteObject[] = [
     { path: PATH_CONSTRAINT.HOME, element: <Login /> },
-    { path: PATH_CONSTRAINT.LOGIN, element: <Login /> },
+    { path: PATH_CONSTRAINT.LOGIN, element: <Login />, loader: userLoader },
     { path: PATH_CONSTRAINT.CHAT, element: <Chat /> },
-    { path: PATH_CONSTRAINT.REGISTER, element: <Register /> },
+    { path: PATH_CONSTRAINT.REGISTER, element: <Register />, loader: userLoader },
   ];
+
+  async function userLoader() {
+    const userName = localStorage.getItem("USER_NAME");
+    const reLoginCode = localStorage.getItem("RE_LOGIN_CODE");
+    if (userName && reLoginCode) {
+      return redirect("/chat");
+    } else {
+      return null;
+    }
+  }
 
   const router = createBrowserRouter([
     {

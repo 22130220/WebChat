@@ -1,6 +1,8 @@
 export interface IChatMessage {
   id: number;
-  text: string;
-  sender: "user" | "other";
-  time?: string;
+  name: string;
+  type: number;
+  to: string;
+  mes: string;
+  createAt?: string;
 }
