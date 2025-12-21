@@ -1,3 +1,5 @@
+import { setConnect } from "../stores/settingSlice";
+import { store } from "../stores/store";
 import pubSub from "./eventBus";
 
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
@@ -10,7 +12,11 @@ function createSocket(path: string) {
   );
   ws = new WebSocket(path)
 
+  // Khi nay mới bắt đầu kết nối
+  store.dispatch(setConnect(false));
+
   ws.onopen = () => {
+    store.dispatch(setConnect(true));
     pubSub.publish("wsOpen", `Connected to ${path}`)
     checkUserCode();
   }
@@ -34,7 +40,6 @@ function createSocket(path: string) {
           case "RE_LOGIN": {
             pubSub.publish("relogin_success", data)
             pubSub.publish("getUserList", data);
-            pubSub.publish("get_people_chat_messages", null)
             break;
           }
           case "GET_USER_LIST": {
@@ -45,15 +50,21 @@ function createSocket(path: string) {
             pubSub.publish("get_people_chat_messages_success", data)
             break;
           }
+          case "SEND_CHAT": {
+            pubSub.publish(`receive_chat:${data.data.name}`, data)
+            break;
+          }
         }
         break;
       }
       case "error": {
+        // TODO: Không chắc là mất kêt nối ở đây có đúng không
+        // store.dispatch(setConnect(false));
         switch (data.event) {
           case "RE_LOGIN": {
-            window.localStorage.removeItem("RE_LOGIN_CODE");
-            window.localStorage.removeItem("USER_NAME");
-            window.location.href = "/login";
+            // window.localStorage.removeItem("RE_LOGIN_CODE");
+            // window.localStorage.removeItem("USER_NAME");
+            // window.location.href = "/login";
             break;
           }
         }
@@ -64,11 +75,14 @@ function createSocket(path: string) {
   }
 
   ws.onerror = (event: Event) => {
+    // TODO: Thầy chưa có sự kiện vào onerror này nên chưa rõ cách xử lý
+    store.dispatch(setConnect(false));
     pubSub.publish("wsError", event)
   }
 
   ws.onclose = (event: CloseEvent) => {
     pubSub.publish("wsClose", event)
+    store.dispatch(setConnect(false));
   }
 
 }

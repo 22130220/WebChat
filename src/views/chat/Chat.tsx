@@ -2,6 +2,7 @@ import ChatSidebar from "./partials/ChatSidebar";
 import ChatMain from "./partials/ChatMain";
 import ChatDirectory from "./partials/ChatDirectory";
 import { useEvent } from "../../hooks/useEvent";
+import { Outlet } from "react-router-dom";
 
 function Chat() {
   useEvent("relogin_success", reLoginSuccess);
@@ -14,10 +15,9 @@ function Chat() {
   return (
     <div className="flex h-screen">
       <ChatSidebar />
-      <ChatMain />
+      <Outlet />
       <ChatDirectory />
     </div>
   );
 }
 export default Chat;
-
