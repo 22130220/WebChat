@@ -1,6 +1,7 @@
 import { setConnect } from "../stores/settingSlice";
 import { store } from "../stores/store";
 import pubSub from "./eventBus";
+import { GLOBAL_EVENT } from "./globalEvents";
 
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
 let ws: WebSocket | null = null;
@@ -62,9 +63,9 @@ function createSocket(path: string) {
         // store.dispatch(setConnect(false));
         switch (data.event) {
           case "RE_LOGIN": {
-            // window.localStorage.removeItem("RE_LOGIN_CODE");
-            // window.localStorage.removeItem("USER_NAME");
-            // window.location.href = "/login";
+            window.localStorage.removeItem("RE_LOGIN_CODE");
+            window.localStorage.removeItem("USER_NAME");
+            window.location.href = "/login";
             break;
           }
         }
@@ -121,12 +122,22 @@ function reconect() {
   createSocket(defaultWsPath);
 }
 
-pubSub.subscribe("wsClose", reconect)
+function subscribeGlobalEvent() {
+  const globalEvent = GLOBAL_EVENT;
+  Object.entries(globalEvent).forEach(([key, value]) => {
+    pubSub.subscribe(key, value);
+  })
+}
 
-createSocket(defaultWsPath);
+function initializeWebSocket() {
+  pubSub.subscribe("wsClose", reconect)
+  subscribeGlobalEvent()
+  createSocket(defaultWsPath);
+}
+
 
 const wSocket = {
-  send, close, readyState
+  send, close, readyState, initializeWebSocket
 }
 
 /*
@@ -152,4 +163,3 @@ function checkUserCode() {
 }
 
 export default wSocket;
-

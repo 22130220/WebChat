@@ -4,7 +4,6 @@ import ChatMainHeader from "./ChatMainHeader";
 import ChatMainPartial from "./ChatMainPartial";
 import ChatMainInput from "./ChatMainInput";
 import wSocket from "../../../utils/wSocket";
-import pubSub from "../../../utils/eventBus";
 import { useParams } from "react-router-dom";
 import { useEvent } from "../../../hooks/useEvent";
 

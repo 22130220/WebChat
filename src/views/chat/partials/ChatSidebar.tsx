@@ -6,13 +6,15 @@ import CreateRoomPanel from "./CreateRoomPanel";
 import React, { useEffect, useMemo } from "react";
 import wSocket from "../../../utils/wSocket";
 import { useEvent } from "../../../hooks/useEvent";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { PATH_CONSTRAINT } from "../../../routers";
 
 const ChatSidebar = () => {
-  const { name } = useParams();
+  const { name, type } = useParams();
   const [showCreateRoom, setShowCreateRoom] = React.useState(false);
   const [messages, setMessages] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log("ChatSidebar mounted, requesting user list");
@@ -24,6 +26,17 @@ const ChatSidebar = () => {
     };
     wSocket.send(JSON.stringify(getUserListPayload));
   }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      const isUserExist = messages.some(
+        (msg) => msg.name === name && msg.type === Number(type),
+      );
+      if (!isUserExist) {
+        navigate(PATH_CONSTRAINT.CHAT);
+      }
+    }
+  }, [messages, name, type]);
 
   // function fetchUserList() {
   //   console.log("ChatSidebar mounted, requesting user list");
