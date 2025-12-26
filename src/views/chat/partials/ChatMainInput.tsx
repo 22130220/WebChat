@@ -1,15 +1,53 @@
+import { useState } from "react";
+import wSocket from "../../../utils/wSocket";
+import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
+import { useParams } from "react-router-dom";
+
 interface Props {
-  message?: string;
-  setMessage: Function;
-  handleKeyPress: Function;
-  handleSend: Function;
+  setMessages: Function;
 }
-export default function ChatMainInput({
-  message,
-  setMessage,
-  handleKeyPress,
-  handleSend,
-}: Props) {
+export default function ChatMainInput({ setMessages }: Props) {
+  const { name, type } = useParams();
+  const [message, setMessage] = useState("");
+
+  const handleSend = () => {
+    const typeEvent = Number(type) === 1 ? "room" : "people";
+    const username = localStorage.getItem("USER_NAME") || "";
+    if (message.trim()) {
+      const messagePayload = {
+        action: "onchat",
+        data: {
+          event: "SEND_CHAT",
+          data: {
+            type: `${typeEvent}`,
+            to: `${name}`,
+            mes: `${message.trim()}`,
+          },
+        },
+      };
+      console.log(messagePayload);
+      wSocket.send(JSON.stringify(messagePayload));
+      setMessages((prev) => [
+        {
+          id: prev.length + 1,
+          to: "phucdz2",
+          mes: message.trim(),
+          name: `${username}`,
+          type: 1,
+          createAt: new Date().toISOString(),
+        } as IChatMessage,
+        ...prev,
+      ]);
+      setMessage("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
   return (
     <>
       <div className="px-6 py-4 border-t border-gray-200">

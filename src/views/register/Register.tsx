@@ -4,7 +4,7 @@ import image from '../login/image.png';
 import { useState } from 'react';
 import { useEvent } from '../../hooks/useEvent';
 import wSocket from '../../utils/wSocket';
-import NotificationModal from './NotificationModal';
+import NotificationModal from '../../common/NotificationModal';
 
 export default function Register() {
   const [userName, setUserName] = useState("");
