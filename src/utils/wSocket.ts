@@ -1,4 +1,7 @@
+import { setConnect } from "../stores/settingSlice";
+import { store } from "../stores/store";
 import pubSub from "./eventBus";
+import { GLOBAL_EVENT } from "./globalEvents";
 
 const defaultWsPath = "wss://chat.longapp.site/chat/chat"
 let ws: WebSocket | null = null;
@@ -10,7 +13,11 @@ function createSocket(path: string) {
   );
   ws = new WebSocket(path)
 
+  // Khi nay mới bắt đầu kết nối
+  store.dispatch(setConnect(false));
+
   ws.onopen = () => {
+    store.dispatch(setConnect(true));
     pubSub.publish("wsOpen", `Connected to ${path}`)
     checkUserCode();
   }
@@ -29,11 +36,11 @@ function createSocket(path: string) {
           }
           case "LOGIN": {
             pubSub.publish("login_success", data);
-            pubSub.publish("get_people_chat_messages", null)
             break;
           }
           case "RE_LOGIN": {
             pubSub.publish("relogin_success", data)
+            pubSub.publish("getUserList", data);
             break;
           }
           case "GET_USER_LIST": {
@@ -44,10 +51,16 @@ function createSocket(path: string) {
             pubSub.publish("get_people_chat_messages_success", data)
             break;
           }
+          case "SEND_CHAT": {
+            pubSub.publish(`receive_chat:${data.data.name}`, data)
+            break;
+          }
         }
         break;
       }
       case "error": {
+        // TODO: Không chắc là mất kêt nối ở đây có đúng không
+        // store.dispatch(setConnect(false));
         switch (data.event) {
           case "RE_LOGIN": {
             window.localStorage.removeItem("RE_LOGIN_CODE");
@@ -63,11 +76,14 @@ function createSocket(path: string) {
   }
 
   ws.onerror = (event: Event) => {
+    // TODO: Thầy chưa có sự kiện vào onerror này nên chưa rõ cách xử lý
+    store.dispatch(setConnect(false));
     pubSub.publish("wsError", event)
   }
 
   ws.onclose = (event: CloseEvent) => {
     pubSub.publish("wsClose", event)
+    store.dispatch(setConnect(false));
   }
 
 }
@@ -106,12 +122,22 @@ function reconect() {
   createSocket(defaultWsPath);
 }
 
-pubSub.subscribe("wsClose", reconect)
+function subscribeGlobalEvent() {
+  const globalEvent = GLOBAL_EVENT;
+  Object.entries(globalEvent).forEach(([key, value]) => {
+    pubSub.subscribe(key, value);
+  })
+}
 
-createSocket(defaultWsPath);
+function initializeWebSocket() {
+  pubSub.subscribe("wsClose", reconect)
+  subscribeGlobalEvent()
+  createSocket(defaultWsPath);
+}
+
 
 const wSocket = {
-  send, close, readyState
+  send, close, readyState, initializeWebSocket
 }
 
 /*
@@ -120,8 +146,6 @@ const wSocket = {
 function checkUserCode() {
   const RE_LOGIN_CODE = localStorage.getItem("RE_LOGIN_CODE");
   const USER_NAME = localStorage.getItem("USER_NAME");
-
-  console.log("RE_LOGIN_CODE:", RE_LOGIN_CODE, "USER_NAME:", USER_NAME);
 
   if (RE_LOGIN_CODE && USER_NAME) {
     const reLoginPayload = {
@@ -139,4 +163,3 @@ function checkUserCode() {
 }
 
 export default wSocket;
-
