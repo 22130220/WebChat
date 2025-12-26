@@ -8,11 +8,12 @@ import wSocket from "../../../utils/wSocket";
 import { useEvent } from "../../../hooks/useEvent";
 import { useNavigate, useParams } from "react-router-dom";
 import { PATH_CONSTRAINT } from "../../../routers";
+import type { IMessage } from "../../../types/interfaces/IMessage";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
   const [showCreateRoom, setShowCreateRoom] = React.useState(false);
-  const [messages, setMessages] = React.useState([]);
+  const [messages, setMessages] = React.useState<IMessage[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const navigate = useNavigate();
 
