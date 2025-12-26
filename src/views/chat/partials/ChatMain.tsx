@@ -4,71 +4,47 @@ import ChatMainHeader from "./ChatMainHeader";
 import ChatMainPartial from "./ChatMainPartial";
 import ChatMainInput from "./ChatMainInput";
 import wSocket from "../../../utils/wSocket";
-import pubSub from "../../../utils/eventBus";
+import { useParams } from "react-router-dom";
+import { useEvent } from "../../../hooks/useEvent";
 
 const ChatMain: React.FC = () => {
-  const [message, setMessage] = useState("");
+  const { name, type } = useParams();
   const [messages, setMessages] = useState<IChatMessage[]>([]);
 
   useEffect(() => {
-    const getPeopleChatMess = () => {
-      const getPeopleChatMessages = {
-        action: "onchat",
+    setMessages([]);
+    const typeEvent =
+      Number(type) === 1 ? "GET_ROOM_CHAT_MES" : "GET_PEOPLE_CHAT_MES";
+    const getPeopleChatMessages = {
+      action: "onchat",
+      data: {
+        event: typeEvent,
         data: {
-          event: "GET_PEOPLE_CHAT_MES",
-          data: {
-            name: "phucdz2",
-            page: 1,
-          },
+          name: `${name}`,
+          page: 1,
         },
-      };
-      wSocket.send(JSON.stringify(getPeopleChatMessages));
+      },
     };
+    wSocket.send(JSON.stringify(getPeopleChatMessages));
+  }, [name, type]);
 
-    const setPeopleChatMess = (data: any) => {
-      setMessages(data.data);
-    };
-
-    pubSub.subscribe("get_people_chat_messages", getPeopleChatMess);
-    pubSub.subscribe("get_people_chat_messages_success", setPeopleChatMess);
-  }, []);
-
-  const handleSend = () => {
-    if (message.trim()) {
-      const messagePayload = {
-        action: "onchat",
-        data: {
-          event: "SEND_CHAT",
-          data: {
-            type: "people",
-            to: `phucdz2`,
-            mes: `${message.trim()}`,
-          },
-        },
-      };
-      console.log(messagePayload);
-      wSocket.send(JSON.stringify(messagePayload));
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          to: "phucdz2",
-          mes: message.trim(),
-          name: "phucdz",
-          type: 0,
-          createAt: new Date().toISOString(),
-        } as IChatMessage,
-      ]);
-      setMessage("");
-    }
+  const setPeopleChatMess = (data: any) => {
+    setMessages(data.data);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const receiveChatEvent = (data: any) => {
+    const rev: IChatMessage = {
+      id: Math.floor(Math.random() * 100000000),
+      to: data.data.to,
+      mes: data.data.mes,
+      name: data.data.name,
+      type: data.data.type,
+      createAt: data.data.createAt,
+    };
+    setMessages((prev) => [rev, ...prev]);
   };
+  useEvent(`receive_chat:${name}`, receiveChatEvent);
+  useEvent("get_people_chat_messages_success", setPeopleChatMess);
 
   return (
     <div className="flex-1 flex flex-col bg-white h-screen">
@@ -77,12 +53,7 @@ const ChatMain: React.FC = () => {
       {/* Messages */}
       <ChatMainPartial messages={messages} />
       {/* Input */}
-      <ChatMainInput
-        message={message}
-        setMessage={setMessage}
-        handleSend={handleSend}
-        handleKeyPress={handleKeyPress}
-      />
+      <ChatMainInput setMessages={setMessages} />
     </div>
   );
 };

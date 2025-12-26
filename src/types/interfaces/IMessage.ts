@@ -2,5 +2,5 @@ export interface IMessage {
   name: string;
   avatar: string;
   actionTime: string;
-  
+  type?: number;
 }

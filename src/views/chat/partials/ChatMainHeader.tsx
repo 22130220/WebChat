@@ -1,4 +1,7 @@
+import { useParams } from "react-router-dom";
+
 export default function ChatMainHeader() {
+  const { name, type } = useParams();
   return (
     <>
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -7,7 +10,9 @@ export default function ChatMainHeader() {
             👨‍💻
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">Florencio Dorrance</h2>
+            <h2 className="font-semibold text-gray-900">
+              {name} {Number(type) === 1 ? ` - Nhóm` : ``}
+            </h2>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-xs text-gray-500">Trực tuyến</span>
