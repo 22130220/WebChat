@@ -8,16 +8,17 @@ import wSocket from "../../../utils/wSocket";
 import { useEvent } from "../../../hooks/useEvent";
 import { useNavigate, useParams } from "react-router-dom";
 import { PATH_CONSTRAINT } from "../../../routers";
+import type { IMessage } from "../../../types/interfaces/IMessage";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
   const [showCreateRoom, setShowCreateRoom] = React.useState(false);
-  const [messages, setMessages] = React.useState([]);
+  const [messages, setMessages] = React.useState<IMessage[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log("ChatSidebar mounted, requesting user list");
+  const fetchUserList = () => {
+    console.log("Requesting user list");
     const getUserListPayload = {
       action: "onchat",
       data: {
@@ -25,6 +26,10 @@ const ChatSidebar = () => {
       },
     };
     wSocket.send(JSON.stringify(getUserListPayload));
+  };
+
+  useEffect(() => {
+    fetchUserList();
   }, []);
 
   useEffect(() => {
@@ -75,6 +80,12 @@ const ChatSidebar = () => {
     setSearchTerm(term);
   };
 
+  //  Callback khi phòng được tạo thành công
+  const handleRoomCreated = () => {
+    console.log("Room created, refreshing user list");
+    fetchUserList();
+  };
+
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col relative">
       <SidebarHeader
@@ -107,7 +118,10 @@ const ChatSidebar = () => {
       <SidebarLogout />
 
       {showCreateRoom && (
-        <CreateRoomPanel onClose={() => setShowCreateRoom(false)} />
+        <CreateRoomPanel
+         onClose={() => setShowCreateRoom(false)}
+         onRoomCreated={handleRoomCreated}
+         />
       )}
     </div>
   );
