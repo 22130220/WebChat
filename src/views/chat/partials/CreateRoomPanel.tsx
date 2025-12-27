@@ -1,18 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import wSocket from '../../../utils/wSocket';
 import { useEvent } from '../../../hooks/useEvent';
+import ToastSuccess from '../../../components/ToastSuccess';
 
 interface CreateRoomPanelProps {
   onClose: () => void;
   onRoomCreated?: () => void; // Callback khi tạo phòng thành công
+  onJoinRoom?: () => void; // Callback khi tham gia phòng thành công
 }
 
-const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreated }) => {
+const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreated, onJoinRoom }) => {
   const [roomName, setRoomName] = useState('');
   const [isRoom, setIsRoom] = useState(false);
   const [error, setError] = useState(''); // State để hiển thị lỗi
   const [isLoading, setIsLoading] = useState(false); // State loading
   const [showSuccessToast, setShowSuccessToast] = useState(false); // Toast thành công
+  const [successMessage, setSuccessMessage] = useState(''); // Message cho toast
 
   const handleClose = useCallback(() => {
     setRoomName('');
@@ -34,6 +37,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     setIsLoading(false);
     
     // Hiển thị toast thành công
+    setSuccessMessage('Tạo phòng thành công!');
     setShowSuccessToast(true);
     
     // Refresh user list
@@ -66,8 +70,54 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     }
   }, []);
 
+  //  Handler khi join phòng thành công
+  const handleJoinRoomSuccess = useCallback((data: any) => {
+    console.log('Joined room successfully:', data);
+    // Clear timeout nếu có
+    // @ts-ignore
+    if (window.__joinRoomTimeout) {
+      // @ts-ignore
+      clearTimeout(window.__joinRoomTimeout);
+    }
+    setIsLoading(false);
+    
+    // Hiển thị toast thành công
+    setSuccessMessage('Tham gia phòng thành công!');
+    setShowSuccessToast(true);
+    
+    // Refresh user list
+    if (onJoinRoom) { 
+      onJoinRoom();
+    }
+    
+    // Đóng toast và panel sau 2 giây
+    // setTimeout(() => {
+    //   setShowSuccessToast(false);
+    //   handleClose();
+    // }, 2000);
+  }, [onJoinRoom, handleClose]);
+
+  //  Handler khi join phòng bị lỗi
+  const handleJoinRoomError = useCallback((data: any) => {
+    console.log('Join room error:', data);
+    // Clear timeout nếu có
+    // @ts-ignore
+    if (window.__joinRoomTimeout) {
+      // @ts-ignore
+      clearTimeout(window.__joinRoomTimeout);
+    }
+    setIsLoading(false);
+    if (data.mes === 'Room not found') {
+      setError('Phòng không tồn tại');
+    } else {
+      setError(data.mes || 'Có lỗi xảy ra');
+    }
+  }, []);
+
   useEvent('create_room_success', handleCreateRoomSuccess);
   useEvent('create_room_error', handleCreateRoomError);
+  useEvent('join_room_success', handleJoinRoomSuccess);
+  useEvent('join_room_error', handleJoinRoomError);
 
   const handleCreateRoom = () => {
     if (!roomName.trim()) {
@@ -104,6 +154,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
       setIsLoading(false);
       
       // Hiển thị toast thành công
+      setSuccessMessage('Tạo phòng thành công!');
       setShowSuccessToast(true);
       
       if (onRoomCreated) {
@@ -120,6 +171,59 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     // Lưu timeout ID để có thể clear nếu nhận được response
     // @ts-ignore
     window.__createRoomTimeout = timeoutId;
+  };
+
+  const handleJoinRoom = () => {
+    if (!roomName.trim()) {
+      setError('Vui lòng nhập tên phòng');
+      return;
+    }
+
+    if (!isRoom) {
+      setError('Vui lòng tick chọn "Phòng"');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    const joinRoomPayload = {
+      action: "onchat",
+      data: {
+        event: "JOIN_ROOM",
+        data: {
+          name: roomName.trim()
+        }
+      }
+    };
+
+    console.log('Sending join room request:', joinRoomPayload);
+    wSocket.send(JSON.stringify(joinRoomPayload));
+
+    // Nếu sau 2 giây không nhận được response,
+    // tự động refresh user list và đóng panel
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Timeout waiting for JOIN_ROOM response, auto-refreshing user list');
+      setIsLoading(false);
+      
+      // Hiển thị toast thành công
+      setSuccessMessage('Tham gia phòng thành công!');
+      setShowSuccessToast(true);
+      
+      if (onJoinRoom) {
+        onJoinRoom();
+      }
+      
+      // Đóng toast và panel sau 2 giây
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        handleClose();
+      }, 2000);
+    }, 2000);
+
+    // Lưu timeout ID để có thể clear nếu nhận được response
+    // @ts-ignore
+    window.__joinRoomTimeout = timeoutId;
   };
 
   return (
@@ -211,10 +315,10 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
               </button>
             )}
             <button
-              onClick={handleClose}
-              disabled={isLoading} //  Disable khi đang loading
+              onClick={handleJoinRoom}
+              disabled={isLoading || !isRoom} //  Disable khi đang loading hoặc chưa tick phòng
               className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
-                isLoading
+                isLoading || !isRoom
                   ? 'bg-gray-400 cursor-not-allowed text-white'
                   : 'bg-teal-600 hover:bg-teal-700 text-white'
               }`}
@@ -229,14 +333,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
 
       {/* Success Toast */}
       {showSuccessToast && (
-        <div className="fixed bottom-4 right-4 z-[60] animate-slide-in">
-          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="font-medium">Tạo phòng thành công!</span>
-          </div>
-        </div>
+       <ToastSuccess successMessage={successMessage} />
       )}
     </>
   );
