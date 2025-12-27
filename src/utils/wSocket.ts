@@ -55,6 +55,10 @@ function createSocket(path: string) {
             pubSub.publish(`receive_chat:${data.data.name}`, data)
             break;
           }
+          case "CREATE_ROOM": {
+            pubSub.publish("create_room_success", data)
+            break;
+          }
         }
         break;
       }
@@ -66,6 +70,15 @@ function createSocket(path: string) {
             window.localStorage.removeItem("RE_LOGIN_CODE");
             window.localStorage.removeItem("USER_NAME");
             window.location.href = "/login";
+            break;
+          }
+          case "CREATE_ROOM": {
+            pubSub.publish("create_room_error", data)
+            break;
+          }
+          case "AUTH": {
+            // Xử lý lỗi xác thực (ví dụ: User not Login)
+            pubSub.publish("auth_error", data)
             break;
           }
         }
