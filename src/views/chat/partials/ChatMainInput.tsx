@@ -2,8 +2,10 @@ import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
 import { FileText, SmilePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import wSocket from "../../../utils/wSocket";
-import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 import { useParams } from "react-router-dom";
+import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
+import { createClient } from "@supabase/supabase-js";
+import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 
 interface Props {
   setMessages: Function;
@@ -43,36 +45,114 @@ export default function ChatMainInput({ setMessages }: Props) {
     setPreviewUrl(null);
   };
 
-  const handleSend = () => {
+  // const handleSend = () => {
+  //   const typeEvent = Number(type) === 1 ? "room" : "people";
+  //   const username = localStorage.getItem("USER_NAME") || "";
+  //   if (message.trim()) {
+  //     const messagePayload = {
+  //       action: "onchat",
+  //       data: {
+  //         event: "SEND_CHAT",
+  //         data: {
+  //           type: `${typeEvent}`,
+  //           to: `${name}`,
+  //           mes: `${message.trim()}`,
+  //         },
+  //       },
+  //     };
+  //     console.log(messagePayload);
+  //     wSocket.send(JSON.stringify(messagePayload));
+  //     setMessages((prev) => [
+  //       {
+  //         id: prev.length + 1,
+  //         to: "phucdz2",
+  //         mes: message.trim(),
+  //         name: `${username}`,
+  //         type: 1,
+  //         createAt: new Date().toISOString(),
+  //       } as IChatMessage,
+  //       ...prev,
+  //     ]);
+  //     setMessage("");
+  //   }
+  // };
+
+  function connectSupabase() {
+    const supabaseUrl = 'https://covptfzrmxcrejmnilfl.supabase.co'
+    // const supabaseKey = process.env.SUPABASE_KEY
+    const supabaseKey = 'sb_publishable_vzIp7DswBJ1LKWlZ5Je90w_-Tz_RvRk'
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    return supabase;
+  }
+
+  async function getImageFromSupabase(selectedFile: File) {
+    const supabase = connectSupabase();
+    const { data, error } = await supabase.storage
+      .from('webchat')
+      .upload(`chat/${selectedFile.name}`, selectedFile);
+
+    if (error) throw error;
+
+    const { data: urlData } = await supabase.storage
+      .from('webchat')
+      .getPublicUrl(`chat/${selectedFile.name}`);
+    return urlData.publicUrl;
+  }
+
+  const handleSend = async () => {
     const typeEvent = Number(type) === 1 ? "room" : "people";
     const username = localStorage.getItem("USER_NAME") || "";
+    const messageList: IMessageDetail[] = [];
+
     if (message.trim()) {
-      const messagePayload = {
-        action: "onchat",
-        data: {
-          event: "SEND_CHAT",
-          data: {
-            type: `${typeEvent}`,
-            to: `${name}`,
-            mes: `${message.trim()}`,
-          },
-        },
-      };
-      console.log(messagePayload);
-      wSocket.send(JSON.stringify(messagePayload));
-      setMessages((prev) => [
-        {
-          id: prev.length + 1,
+      const messageChat: IMessageDetail = {
+        type: "TEXT",
+        content: message,
+        sender: username,
+        to: "phucdz2",
+        timestamp: new Date().toISOString()
+      }
+      messageList.push(messageChat);
+
+      if (selectedFile) {
+        const publicUrl = await getImageFromSupabase(selectedFile);
+        const imageChat: IMessageDetail = {
+          type: "IMAGE",
+          content: publicUrl,
+          sender: username,
           to: "phucdz2",
-          mes: message.trim(),
-          name: `${username}`,
-          type: 1,
-          createAt: new Date().toISOString(),
-        } as IChatMessage,
-        ...prev,
-      ]);
-      setMessage("");
+          timestamp: new Date().toISOString()
+        }
+        messageList.push(imageChat);
+      }
     }
+
+    const messagePayload = {
+      action: "onchat",
+      data: {
+        event: "SEND_CHAT",
+        data: {
+          type: `${typeEvent}`,
+          to: `${name}`,
+          mes: JSON.stringify(messageList),
+        },
+      },
+    };
+    console.log(messagePayload);
+    wSocket.send(JSON.stringify(messagePayload));
+
+    setMessages((prev) => [
+      {
+        id: prev.length + 1,
+        to: "phucdz2",
+        mes: JSON.stringify(messageList),
+        name: `${username}`,
+        type: 1,
+        createAt: new Date().toISOString(),
+      } as IChatMessage,
+      ...prev,
+    ]);
+    setMessage("");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -179,3 +259,5 @@ export default function ChatMainInput({ setMessages }: Props) {
     </>
   );
 }
+
+
