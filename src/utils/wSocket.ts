@@ -1,4 +1,4 @@
-import { setConnect } from "../stores/settingSlice";
+import { setConnect, setIsRelogin } from "../stores/settingSlice";
 import { store } from "../stores/store";
 import pubSub from "./eventBus";
 import { GLOBAL_EVENT } from "./globalEvents";
@@ -15,6 +15,7 @@ function createSocket(path: string) {
 
   // Khi nay mới bắt đầu kết nối
   store.dispatch(setConnect(false));
+  store.dispatch(setIsRelogin(false));
 
   ws.onopen = () => {
     store.dispatch(setConnect(true));
@@ -39,6 +40,7 @@ function createSocket(path: string) {
             break;
           }
           case "RE_LOGIN": {
+            store.dispatch(setIsRelogin(true));
             pubSub.publish("relogin_success", data)
             pubSub.publish("getUserList", data);
             break;
@@ -59,6 +61,10 @@ function createSocket(path: string) {
             pubSub.publish("create_room_success", data)
             break;
           }
+          case "JOIN_ROOM": {
+            pubSub.publish("join_room_success", data)
+            break;
+          }
         }
         break;
       }
@@ -67,6 +73,7 @@ function createSocket(path: string) {
         // store.dispatch(setConnect(false));
         switch (data.event) {
           case "RE_LOGIN": {
+            store.dispatch(setIsRelogin(false));
             window.localStorage.removeItem("RE_LOGIN_CODE");
             window.localStorage.removeItem("USER_NAME");
             window.location.href = "/login";
@@ -79,6 +86,10 @@ function createSocket(path: string) {
           case "AUTH": {
             // Xử lý lỗi xác thực (ví dụ: User not Login)
             pubSub.publish("auth_error", data)
+            break;
+          }
+          case "JOIN_ROOM": {
+            pubSub.publish("join_room_error", data)
             break;
           }
         }

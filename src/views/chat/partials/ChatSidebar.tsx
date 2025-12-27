@@ -86,6 +86,11 @@ const ChatSidebar = () => {
     fetchUserList();
   };
 
+  const handleJoinRoom = () => {
+    console.log("Join room, refreshing user list");
+    fetchUserList();
+  };
+
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col relative">
       <SidebarHeader
@@ -121,6 +126,7 @@ const ChatSidebar = () => {
         <CreateRoomPanel
          onClose={() => setShowCreateRoom(false)}
          onRoomCreated={handleRoomCreated}
+         onJoinRoom={handleJoinRoom}
          />
       )}
     </div>
