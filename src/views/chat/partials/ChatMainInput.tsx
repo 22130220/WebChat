@@ -86,16 +86,19 @@ export default function ChatMainInput({ setMessages }: Props) {
   }
 
   async function getImageFromSupabase(selectedFile: File) {
+    const fileExt = selectedFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
     const supabase = connectSupabase();
     const { data, error } = await supabase.storage
       .from('webchat')
-      .upload(`chat/${selectedFile.name}`, selectedFile);
+      .upload(`chat/${fileName}`, selectedFile);
 
     if (error) throw error;
 
     const { data: urlData } = await supabase.storage
       .from('webchat')
-      .getPublicUrl(`chat/${selectedFile.name}`);
+      .getPublicUrl(`chat/${fileName}`);
     return urlData.publicUrl;
   }
 
@@ -113,18 +116,18 @@ export default function ChatMainInput({ setMessages }: Props) {
         timestamp: new Date().toISOString()
       }
       messageList.push(messageChat);
+    }
 
-      if (selectedFile) {
-        const publicUrl = await getImageFromSupabase(selectedFile);
-        const imageChat: IMessageDetail = {
-          type: "IMAGE",
-          content: publicUrl,
-          sender: username,
-          to: "phucdz2",
-          timestamp: new Date().toISOString()
-        }
-        messageList.push(imageChat);
+    if (selectedFile) {
+      const publicUrl = await getImageFromSupabase(selectedFile);
+      const imageChat: IMessageDetail = {
+        type: "IMAGE",
+        content: publicUrl,
+        sender: username,
+        to: "phucdz2",
+        timestamp: new Date().toISOString()
       }
+      messageList.push(imageChat);
     }
 
     const messagePayload = {
@@ -153,6 +156,7 @@ export default function ChatMainInput({ setMessages }: Props) {
       ...prev,
     ]);
     setMessage("");
+    clearFile();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
