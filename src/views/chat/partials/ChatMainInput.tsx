@@ -102,10 +102,31 @@ export default function ChatMainInput({ setMessages }: Props) {
     return urlData.publicUrl;
   }
 
+  async function insertFileToTable(publicUrl: string, sender: string, receiver: string, selectedFile: File) {
+    const supabase = connectSupabase();
+    const { error } = await supabase
+    .from("chat_files")
+    .insert([
+      {
+        sender: sender,
+        receiver: receiver,
+        file_url: publicUrl,
+        file_name: selectedFile.name,
+        file_type: selectedFile.type
+      }
+    ]);
+    
+    if(error) {
+      console.error("Cannot Upload File", error);
+    }
+  } 
+
+
   const handleSend = async () => {
     const typeEvent = Number(type) === 1 ? "room" : "people";
     const username = localStorage.getItem("USER_NAME") || "";
     const messageList: IMessageDetail[] = [];
+    const receivedName = name || ""
 
     if (message.trim()) {
       const messageChat: IMessageDetail = {
@@ -120,6 +141,7 @@ export default function ChatMainInput({ setMessages }: Props) {
 
     if (selectedFile) {
       const publicUrl = await getImageFromSupabase(selectedFile);
+      insertFileToTable(publicUrl, username, receivedName, selectedFile);
       const imageChat: IMessageDetail = {
         type: "IMAGE",
         content: publicUrl,
@@ -143,7 +165,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     };
     console.log(messagePayload);
     wSocket.send(JSON.stringify(messagePayload));
-
+    
     setMessages((prev) => [
       {
         id: prev.length + 1,
