@@ -4,4 +4,6 @@ export interface FileItem {
   type: string;
   size: string;
   icon: string;
+  url: string;
 }
+
