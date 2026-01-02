@@ -12,7 +12,6 @@ function createSocket(path: string) {
     "color: #9e9e9e;"
   );
   ws = new WebSocket(path)
-
   // Khi nay mới bắt đầu kết nối
   store.dispatch(setConnect(false));
   store.dispatch(setIsRelogin(false));
@@ -65,6 +64,10 @@ function createSocket(path: string) {
             pubSub.publish("join_room_success", data)
             break;
           }
+          case "CHECK_USER_EXIST": {
+            pubSub.publish("check_user_exist_success", data)
+            break;
+          }
         }
         break;
       }
@@ -90,6 +93,10 @@ function createSocket(path: string) {
           }
           case "JOIN_ROOM": {
             pubSub.publish("join_room_error", data)
+            break;
+          }
+          case "CHECK_USER_EXIST": {
+            pubSub.publish("check_user_exist_error", data)
             break;
           }
         }

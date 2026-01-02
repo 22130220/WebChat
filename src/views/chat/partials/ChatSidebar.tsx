@@ -33,11 +33,13 @@ const ChatSidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && name) {
       const isUserExist = messages.some(
         (msg) => msg.name === name && msg.type === Number(type),
       );
-      if (!isUserExist) {
+      // Chỉ redirect nếu user không tồn tại VÀ không phải là chat cá nhân (type !== "0")
+      // Cho phép chat với người dùng mới (type = 0) ngay cả khi chưa có trong list
+      if (!isUserExist && type !== "0") {
         navigate(PATH_CONSTRAINT.CHAT);
       }
     }
@@ -106,7 +108,7 @@ const ChatSidebar = () => {
               key={msg.actionTime}
               message={{
                 name: msg.name,
-                avatar: "👨‍💼",
+                avatar: msg.type === 1 ? "👥" : "👨‍💼",
                 actionTime: msg.actionTime,
                 type: msg.type,
               }}

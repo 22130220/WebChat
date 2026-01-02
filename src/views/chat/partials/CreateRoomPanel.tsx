@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import wSocket from '../../../utils/wSocket';
 import { useEvent } from '../../../hooks/useEvent';
 import ToastSuccess from '../../../components/ToastSuccess';
+import { useNavigate } from 'react-router-dom';
 
 interface CreateRoomPanelProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface CreateRoomPanelProps {
 }
 
 const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreated, onJoinRoom }) => {
+  const navigate = useNavigate();
   const [roomName, setRoomName] = useState('');
   const [isRoom, setIsRoom] = useState(false);
   const [error, setError] = useState(''); // State để hiển thị lỗi
@@ -114,10 +116,54 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     }
   }, []);
 
+  //  Handler khi kiểm tra người dùng tồn tại
+  const handleCheckUserSuccess = useCallback((data: any) => {
+    console.log('User check response:', data);
+    // Clear timeout nếu có
+    // @ts-ignore
+    if (window.__checkUserTimeout) {
+      // @ts-ignore
+      clearTimeout(window.__checkUserTimeout);
+    }
+    setIsLoading(false);
+    
+    // Kiểm tra data.data.status để xác định người dùng có tồn tại không
+    if (data.data && data.data.status === true) {
+      // Người dùng tồn tại
+      setSuccessMessage('Tìm thấy người dùng!');
+      setShowSuccessToast(true);
+      
+      // Chuyển đến phòng chat với người dùng (type = 0)
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        handleClose();
+        navigate(`/chat/${roomName.trim()}/type/0`);
+      }, 1000);
+    } else {
+      // Người dùng không tồn tại (data.data.status === false)
+      setError('Người dùng không tồn tại');
+    }
+  }, [roomName, navigate, handleClose]);
+
+  //  Handler khi người dùng không tồn tại
+  const handleCheckUserError = useCallback((data: any) => {
+    console.log('User check error:', data);
+    // Clear timeout nếu có
+    // @ts-ignore
+    if (window.__checkUserTimeout) {
+      // @ts-ignore
+      clearTimeout(window.__checkUserTimeout);
+    }
+    setIsLoading(false);
+    setError('Người dùng không tồn tại');
+  }, []);
+
   useEvent('create_room_success', handleCreateRoomSuccess);
   useEvent('create_room_error', handleCreateRoomError);
   useEvent('join_room_success', handleJoinRoomSuccess);
   useEvent('join_room_error', handleJoinRoomError);
+  useEvent('check_user_exist_success', handleCheckUserSuccess);
+  useEvent('check_user_exist_error', handleCheckUserError);
 
   const handleCreateRoom = () => {
     if (!roomName.trim()) {
@@ -226,6 +272,39 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     window.__joinRoomTimeout = timeoutId;
   };
 
+  const handleAddFriend = () => {
+    if (!roomName.trim()) {
+      setError('Vui lòng nhập tên người dùng');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    const checkUserPayload = {
+      action: "onchat",
+      data: {
+        event: "CHECK_USER_EXIST",
+        data: {
+          user: roomName.trim()
+        }
+      }
+    };
+
+    console.log('Sending check user request:', checkUserPayload);
+    wSocket.send(JSON.stringify(checkUserPayload));
+
+    // Timeout fallback
+    const timeoutId = setTimeout(() => {
+      console.log('⚠️ Timeout waiting for CHECK_USER_EXIST response');
+      setIsLoading(false);
+      setError('Không thể kiểm tra người dùng. Vui lòng thử lại.');
+    }, 5000);
+
+    // @ts-ignore
+    window.__checkUserTimeout = timeoutId;
+  };
+
   return (
     <>
       {/* Overlay to close on outside click */}
@@ -238,7 +317,9 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
         <div className="p-4 flex flex-col">
           {/* Header with Close Button */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Tạo phòng mới</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {isRoom ? 'Tạo phòng mới' : 'Thêm bạn bè'}
+            </h3>
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -254,7 +335,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Tên phòng hoặc người dùng"
+              placeholder={isRoom ? "Tên phòng" : "Tên người dùng"}
               value={roomName}
               onChange={(e) => {
                 setRoomName(e.target.value);
@@ -289,44 +370,72 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
           </div>
 
           {/* Action Buttons */}
-          {/* Chỉ hiển thị nút + khi isRoom = true */}
           <div className="flex gap-2">
-            {isRoom && (
+            {isRoom ? (
+              // Nút cho chức năng phòng
+              <>
+                <button
+                  onClick={handleCreateRoom}
+                  disabled={isLoading}
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
+                    isLoading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-teal-600 hover:bg-teal-700 text-white'
+                  }`}
+                  title="Tạo phòng"
+                >
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={handleJoinRoom}
+                  disabled={isLoading}
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
+                    isLoading
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-teal-600 hover:bg-teal-700 text-white'
+                  }`}
+                  title="Tham gia phòng"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              // Nút cho chức năng thêm bạn
               <button
-                onClick={handleCreateRoom}
-                disabled={isLoading} // Chỉ disable khi đang loading
-                className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
+                onClick={handleAddFriend}
+                disabled={isLoading}
+                className={`w-full px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                   isLoading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-teal-600 hover:bg-teal-700 text-white'
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                 }`}
               >
                 {isLoading ? (
-                  //  Loading spinner
                   <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="text-sm font-medium">Thêm bạn</span>
+                  </>
                 )}
               </button>
             )}
-            <button
-              onClick={handleJoinRoom}
-              disabled={isLoading || !isRoom} //  Disable khi đang loading hoặc chưa tick phòng
-              className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
-                isLoading || !isRoom
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-teal-600 hover:bg-teal-700 text-white'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
