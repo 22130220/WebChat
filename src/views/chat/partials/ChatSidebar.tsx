@@ -9,6 +9,11 @@ import { useEvent } from "../../../hooks/useEvent";
 import { useNavigate, useParams } from "react-router-dom";
 import { PATH_CONSTRAINT } from "../../../routers";
 import type { IMessage } from "../../../types/interfaces/IMessage";
+import {
+  saveUserContact,
+  getUserContacts,
+  mergeUserLists,
+} from "../../../services/firebaseUserService";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -33,11 +38,13 @@ const ChatSidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && name) {
       const isUserExist = messages.some(
         (msg) => msg.name === name && msg.type === Number(type),
       );
-      if (!isUserExist) {
+      // Chỉ redirect nếu user không tồn tại VÀ không phải là chat cá nhân (type !== "0")
+      // Cho phép chat với người dùng mới (type = 0) ngay cả khi chưa có trong list
+      if (!isUserExist && type !== "0") {
         navigate(PATH_CONSTRAINT.CHAT);
       }
     }
@@ -56,13 +63,87 @@ const ChatSidebar = () => {
   //
   // useEvent("getUserList", fetchUserList);
 
-  function getUserListHandler(data: any) {
+  async function getUserListHandler(data: any) {
     console.log("Received user list:", data);
 
-    setMessages(data.data);
+    const backendUsers = data.data || [];
+    const currentUser = localStorage.getItem("USER_NAME");
+
+    if (currentUser) {
+      try {
+        // Lấy contacts từ Firebase
+        const firebaseUsers = await getUserContacts(currentUser);
+        
+        // Merge backend data với Firebase data
+        const mergedUsers = mergeUserLists(backendUsers, firebaseUsers);
+        
+        console.log("Merged user list:", {
+          backend: backendUsers.length,
+          firebase: firebaseUsers.length,
+          merged: mergedUsers.length,
+        });
+        
+        setMessages(mergedUsers);
+      } catch (error) {
+        console.error("Error loading Firebase contacts:", error);
+        // Fallback to backend data only
+        setMessages(backendUsers);
+      }
+    } else {
+      setMessages(backendUsers);
+    }
   }
 
   useEvent("user_list_success", getUserListHandler);
+
+  // Tự động thêm người gửi vào user list và lưu vào Firebase
+  const handleReceiveNewMessage = async (data: any) => {
+    console.log("Received new message from:", data.data.name);
+    
+    const senderName = data.data.name;
+    const messageType = data.data.type;
+    
+    // Kiểm tra xem người gửi đã có trong user list chưa
+    const isUserInList = messages.some(
+      (msg) => msg.name === senderName && msg.type === messageType
+    );
+    
+    // Nếu chưa có, thêm vào user list và lưu vào Firebase
+    if (!isUserInList) {
+      console.log(`Adding ${senderName} to user list`);
+      const newUser: IMessage = {
+        name: senderName,
+        avatar: messageType === 1 ? "👥" : "👨‍💼",
+        actionTime: data.data.createAt || new Date().toISOString(),
+        type: messageType,
+      };
+      
+      // Lưu vào Firebase để persist và đồng bộ giữa thiết bị
+      const currentUser = localStorage.getItem("USER_NAME");
+      if (currentUser) {
+        try {
+          await saveUserContact(currentUser, newUser);
+          console.log(`Saved ${senderName} to Firebase`);
+        } catch (error) {
+          console.error("Error saving to Firebase:", error);
+        }
+      }
+      
+      setMessages((prev) => [newUser, ...prev]);
+    }
+  };
+
+  useEvent("wsMessage", (rawData: string) => {
+    try {
+      const data = JSON.parse(rawData);
+      // Chỉ xử lý khi nhận tin nhắn chat mới
+      if (data.status === "success" && data.event === "SEND_CHAT") {
+        handleReceiveNewMessage(data);
+      }
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
+    }
+  });
 
   const filteredMessages = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -106,7 +187,7 @@ const ChatSidebar = () => {
               key={msg.actionTime}
               message={{
                 name: msg.name,
-                avatar: "👨‍💼",
+                avatar: msg.type === 1 ? "👥" : "👨‍💼",
                 actionTime: msg.actionTime,
                 type: msg.type,
               }}
