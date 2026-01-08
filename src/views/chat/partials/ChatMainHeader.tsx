@@ -1,7 +1,30 @@
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import wSocket from "../../../utils/wSocket";
+import { selectIsOnline } from "../../../stores/onlineStatusSlice";
 
 export default function ChatMainHeader() {
   const { name, type } = useParams();
+  const isOnline = useSelector(selectIsOnline);
+  const isPerson = Number(type) === 0;
+
+  useEffect(() => {
+    // Chỉ check online status khi mở chat với người (type === 0)
+    if (name && isPerson) {
+      const checkOnlinePayload = {
+        action: "onchat",
+        data: {
+          event: "CHECK_USER_ONLINE",
+          data: {
+            user: name
+          }
+        }
+      };
+      wSocket.send(JSON.stringify(checkOnlinePayload));
+    }
+  }, [name, isPerson]);
+
   return (
     <>
       <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex items-center justify-between">
@@ -13,10 +36,15 @@ export default function ChatMainHeader() {
             <h2 className="font-semibold text-[var(--text-primary)]">
               {name} {Number(type) === 1 ? ` - Nhóm` : ``}
             </h2>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs text-[var(--text-muted)]">Trực tuyến</span>
-            </div>
+            {/* Chỉ hiển thị trạng thái online cho người (type === 0) */}
+            {isPerson && (
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className="text-xs text-[var(--text-muted)]">
+                  {isOnline ? 'Trực tuyến' : 'Không hoạt động'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         <button className="px-4 py-2 text-[var(--accent-primary)] hover:bg-[var(--accent-light)] rounded-md flex items-center gap-2 font-medium transition-colors">
