@@ -1,0 +1,1 @@
+import{R as s,p as c}from"./index-DgdCZOFf.js";function n(u,r){const e=s.useRef(r);s.useEffect(()=>{e.current=r},[r]),s.useEffect(()=>{const t=(...f)=>{e.current(...f)};return c.subscribe(u,t),()=>{c.unSubscribe(u,t)}},[u])}export{n as u};
