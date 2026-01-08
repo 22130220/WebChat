@@ -1,109 +1,208 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
-import { Download, X } from "lucide-react";
+import { ArrowDown, Download, X } from "lucide-react";
 
 interface IChatMainProps {
   messages: Array<IChatMessage>;
+  setPageUp?: () => void;
 }
 
-export default function ChatMainPartial({ messages }: IChatMainProps) {
+export default function ChatMainPartial({
+  messages,
+  setPageUp,
+}: IChatMainProps) {
   const username = localStorage.getItem("USER_NAME") || "";
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [selectedImage, setSelectedImage] = useState<{ imageUrl: string, name: string } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false); // Flag để bỏ qua lần đầu tiên
+  const prevScrollHeightRef = useRef<number>(0); // Lưu scrollHeight trước khi load more
+  const prevMessagesLengthRef = useRef<number>(0); // Lưu số lượng messages để detect tin nhắn mới
+  const [selectedImage, setSelectedImage] = useState<{
+    imageUrl: string;
+    name: string;
+  } | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Tự động scroll xuống bottom khi messages thay đổi
-  useEffect(() => {
+  // Scroll xuống cuối
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log(messages);
-  }, [messages]); // Chạy lại mỗi khi messages thay đổi (có tin nhắn mới)
+  };
+
+  // Detect khi người dùng cuộn lên đầu trang
+  const handleScroll = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Hiển thị nút scroll khi không ở cuối trang
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollButton(distanceFromBottom > 100);
+
+    // Bỏ qua load more nếu chưa initialized (tránh trigger khi mới vào trang)
+    if (!isInitializedRef.current) return;
+
+    // Khi scrollTop <= threshold (ví dụ 50px), gọi setPageUp
+    const threshold = 50;
+    if (container.scrollTop <= threshold) {
+      // Lưu scrollHeight trước khi load more
+      prevScrollHeightRef.current = container.scrollHeight;
+      setPageUp?.();
+    }
+  };
+
+  // Đánh dấu initialized sau khi messages load lần đầu
+  useEffect(() => {
+    if (!isInitializedRef.current && messages.length > 0) {
+      // Scroll xuống cuối lần đầu tiên khi vào trang
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      prevMessagesLengthRef.current = messages.length;
+      setTimeout(() => {
+        isInitializedRef.current = true;
+      }, 300);
+    }
+  }, [messages]);
+
+  // Auto scroll khi có tin nhắn mới (nếu đang ở gần cuối hoặc tôi là người gửi)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isInitializedRef.current) return;
+
+    // Kiểm tra xem có phải tin nhắn mới không (không phải load more)
+    // Load more: messages tăng và prevScrollHeightRef > 0
+    // Tin nhắn mới: messages tăng nhưng prevScrollHeightRef === 0
+    const isNewMessage =
+      messages.length > prevMessagesLengthRef.current &&
+      prevScrollHeightRef.current === 0;
+
+    prevMessagesLengthRef.current = messages.length;
+
+    if (!isNewMessage) return;
+
+    // Lấy tin nhắn mới nhất để kiểm tra ai gửi
+    // messages[0] là tin nhắn mới nhất (được thêm vào đầu mảng trong ChatMain)
+    const latestMessage = messages[0];
+    let isSentByMe = false;
+
+    if (latestMessage) {
+      try {
+        const parsed: IMessageDetail[] = JSON.parse(latestMessage.mes);
+        const lastDetail = parsed[parsed.length - 1];
+        isSentByMe = lastDetail?.sender === username;
+      } catch {
+        isSentByMe = false;
+      }
+    }
+
+    // Nếu tôi là người gửi → luôn scroll xuống
+    if (isSentByMe) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    // Nếu là người khác gửi → chỉ scroll nếu đang ở gần cuối (< 150px)
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (distanceFromBottom < 150) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, username]);
+
+  // Giữ scroll position khi load more messages
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isInitializedRef.current) return;
+
+    // Nếu có scrollHeight cũ (đã load more), điều chỉnh scrollTop
+    if (prevScrollHeightRef.current > 0) {
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+      container.scrollTop = scrollDiff;
+      prevScrollHeightRef.current = 0; // Reset
+    }
+  }, [messages]);
 
   const messageDetailList = useMemo(() => {
-    return messages.flatMap(msg => {
+    return messages.flatMap((msg) => {
       try {
         const parsed: IMessageDetail[] = JSON.parse(msg.mes);
         return parsed;
       } catch (error) {
-        return []
+        return [];
       }
-    })
+    });
   }, [messages]);
 
   return (
-    <>
-      {/* Cái type chỗ list message chả về là gì vậy ?
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.type === 1 ? "justify-end" : "justify-start"}`}
-          >
-            {msg.type === 0 && (
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 flex-shrink-0">
-                👨‍💻
-              </div>
-            )}
-            <div
-              className={`max-w-md px-4 py-2 rounded-2xl ${
-                msg.type === 1
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-900"
-              }`}
-            >
-              <p className="text-sm">{msg.mes}</p>
-            </div>
-            {msg.type === 1 && (
-              <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 flex-shrink-0">
-                👤
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      */}
-
+    <div className="relative flex-1 flex flex-col overflow-hidden">
       {/* Sửa lại thành so sánh tên user để phân biệt tin nhắn gửi và nhận */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messageDetailList
-          .slice()
-          .reverse()
-          .map((msg, index) => {
-            const isme = username === msg.sender;
-            return <div
-              key={index}
-              className={`flex ${username === msg.sender ? "justify-end" : "justify-start"}`}
-            >
-              {username !== msg.sender && (
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0">
-                  👨‍💻
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-6 py-4 flex flex-col"
+      >
+        <div className="mt-auto flex flex-col space-y-4">
+          {messageDetailList
+            .slice()
+            .reverse()
+            .map((msg, index) => {
+              const isme = username === msg.sender;
+              return (
+                <div
+                  key={index}
+                  className={`flex ${username === msg.sender ? "justify-end" : "justify-start"}`}
+                >
+                  {username !== msg.sender && (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0">
+                      👨‍💻
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-md px-4 py-2 rounded-2xl ${
+                      username === msg.sender
+                        ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
+                        : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
+                    }`}
+                  >
+                    {msg.type === "TEXT" ? (
+                      <p className="text-sm">{msg.content}</p>
+                    ) : (
+                      <img
+                        src={msg.content}
+                        alt="sent"
+                        className="rounded-lg max-w-full h-auto"
+                        onClick={() =>
+                          setSelectedImage({
+                            imageUrl: msg.content,
+                            name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`,
+                          })
+                        }
+                      />
+                    )}
+                  </div>
+                  {username === msg.sender && (
+                    <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0">
+                      👤
+                    </div>
+                  )}
                 </div>
-              )}
-              <div
-                className={`max-w-md px-4 py-2 rounded-2xl ${username === msg.sender
-                  ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
-                  : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
-                  }`}
-              >
-                {msg.type === "TEXT" ? (
-                  <p className="text-sm">{msg.content}</p>
-                ) : (
-                  <img src={msg.content} alt="sent" className="rounded-lg max-w-full h-auto"
-                    onClick={() => setSelectedImage({
-                      imageUrl: msg.content,
-                      name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`
-                    })}
-                  />
-                )}
-              </div>
-              {username === msg.sender && (
-                <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0">
-                  👤
-                </div>
-              )}
-            </div>
-          })}
+              );
+            })}
+        </div>
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Nút scroll xuống cuối */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-24 right-8 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] p-3 rounded-full shadow-lg transition-all duration-200 z-10"
+          title="Scroll xuống cuối"
+        >
+          <ArrowDown size={20} />
+        </button>
+      )}
 
       {selectedImage && (
         <div
@@ -126,7 +225,9 @@ export default function ChatMainPartial({ messages }: IChatMainProps) {
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in duration-300"
               onClick={(e) => e.stopPropagation()} // Click vào ảnh thì không đóng
             />
-            <p className="mt-4 text-white text-lg font-medium">{selectedImage.name}</p>
+            <p className="mt-4 text-white text-lg font-medium">
+              {selectedImage.name}
+            </p>
           </div>
           <div className="absolute bottom-10 flex gap-4">
             <a
@@ -141,9 +242,7 @@ export default function ChatMainPartial({ messages }: IChatMainProps) {
             </a>
           </div>
         </div>
-
-      )
-      }
-    </>
+      )}
+    </div>
   );
 }

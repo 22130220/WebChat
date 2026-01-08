@@ -10,9 +10,19 @@ import { useEvent } from "../../../hooks/useEvent";
 const ChatMain: React.FC = () => {
   const { name, type } = useParams();
   const [messages, setMessages] = useState<IChatMessage[]>([]);
+  const [page, SetPage] = useState<number>(1);
+  const [canLoadingMove, setCanLoadingMore] = useState<boolean>(true);
 
+  // Reset state khi chuyển sang người/room khác
   useEffect(() => {
     setMessages([]);
+    SetPage(1);
+    setCanLoadingMore(true);
+  }, [name, type]);
+
+  // Fetch messages khi page thay đổi hoặc khi chuyển người (page reset về 1)
+  useEffect(() => {
+    if (canLoadingMove === false) return;
     const typeEvent =
       Number(type) === 1 ? "GET_ROOM_CHAT_MES" : "GET_PEOPLE_CHAT_MES";
     const getPeopleChatMessages = {
@@ -21,15 +31,28 @@ const ChatMain: React.FC = () => {
         event: typeEvent,
         data: {
           name: `${name}`,
-          page: 1,
+          page: page,
         },
       },
     };
     wSocket.send(JSON.stringify(getPeopleChatMessages));
-  }, [name, type]);
+  }, [name, type, page, canLoadingMove]);
 
   const setPeopleChatMess = (data: any) => {
-    setMessages(data.data);
+    if (data.data.length === 0) {
+      setCanLoadingMore(false);
+      return;
+    }
+    if (messages.length === 0 || page === 1) {
+      setMessages(data.data);
+      return;
+    }
+    setMessages((prev) => [...prev, ...data.data]);
+  };
+
+  const canSetPageUp = () => {
+    if (canLoadingMove === false) return;
+    SetPage((prev) => prev + 1);
   };
 
   const receiveChatEvent = (data: any) => {
@@ -51,7 +74,7 @@ const ChatMain: React.FC = () => {
       {/* Header */}
       <ChatMainHeader />
       {/* Messages */}
-      <ChatMainPartial messages={messages} />
+      <ChatMainPartial messages={messages} setPageUp={canSetPageUp} />
       {/* Input */}
       <ChatMainInput setMessages={setMessages} />
     </div>

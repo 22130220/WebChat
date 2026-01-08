@@ -72,6 +72,10 @@ function createSocket(path: string) {
             pubSub.publish("check_user_exist_success", data)
             break;
           }
+          case "CHECK_USER_ONLINE": {
+            pubSub.publish("check_user_online_success", data)
+            break;
+          }
         }
         break;
       }

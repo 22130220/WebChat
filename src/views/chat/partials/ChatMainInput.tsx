@@ -128,7 +128,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     console.log(messagePayload);
     wSocket.send(JSON.stringify(messagePayload));
 
-    if (Number(type) === 1) {
+    if (Number(type) === 0) {
       setMessages((prev) => [
         {
           id: prev.length + 1,
@@ -140,9 +140,9 @@ export default function ChatMainInput({ setMessages }: Props) {
         } as IChatMessage,
         ...prev,
       ]);
-      setMessage("");
-      clearFile();
     }
+    setMessage("");
+    clearFile();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
