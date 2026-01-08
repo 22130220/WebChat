@@ -1,3 +1,5 @@
+import type { ITypingStatus } from "./ITypingStatus";
+
 type MessageType = "TEXT" | "IMAGE"
 
 export interface IMessageDetail {
@@ -7,3 +9,5 @@ export interface IMessageDetail {
     to: string,
     timestamp: string
 }
+
+export type RawMessageItem = IMessageDetail | ITypingStatus;

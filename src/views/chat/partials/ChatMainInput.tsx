@@ -5,8 +5,9 @@ import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
-import { supabaseClient } from "../../../services/supabaseService";
+import { getImageFromSupabase, insertFileToTable } from "../../../services/supabaseService";
 import pubSub from "../../../utils/eventBus";
+import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
 
 interface Props {
   setMessages: Function;
@@ -16,10 +17,15 @@ export default function ChatMainInput({ setMessages }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const { name, type } = useParams();
   const [message, setMessage] = useState("");
+  const username = localStorage.getItem("USER_NAME") || "";
+  const typeEvent = Number(type) === 1 ? "room" : "people";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  const isTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle Emoji Click
   const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -60,45 +66,38 @@ export default function ChatMainInput({ setMessages }: Props) {
     setPreviewUrls(nextPreviews);
   };
 
-  async function getImageFromSupabase(file: File) {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  /**
+   * Handle TypingStatus
+   */
+  function sendTypingStatus(isTyping: boolean) {
+    const messageList: ITypingStatus[] = [];
+    const typingStatus: ITypingStatus = {
+      type: "TYPING_STATUS",
+      sender: username,
+      receiver: `${name}`,
+      isTyping: isTyping,
+    };
+    messageList.push(typingStatus);
 
-    const supabase = supabaseClient;
-    const { data, error } = await supabase.storage.from("webchat").upload(`chat/${fileName}`, file);
-
-    if (error) throw error;
-
-    const { data: urlData } = await supabase.storage.from("webchat").getPublicUrl(`chat/${fileName}`);
-    return { publicUrl: urlData.publicUrl, path: data?.path || `chat/${fileName}` };
-  }
-
-  async function insertFileToTable(publicUrl: string, sender: string, receiver: string, file: File) {
-    const supabase = supabaseClient;
-    const { data, error } = await supabase
-      .from("chat_files")
-      .insert([
-        {
-          sender: sender,
-          receiver: receiver,
-          file_url: publicUrl,
-          file_name: file.name,
-          file_type: file.type,
+    const messagePayload = {
+      action: "onchat",
+      data: {
+        event: "SEND_CHAT",
+        data: {
+          type: `${typeEvent}`,
+          to: `${name}`,
+          mes: JSON.stringify(messageList),
         },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Cannot insert file row", error);
-      return null;
-    }
-    return data;
+      },
+    };
+    wSocket.send(JSON.stringify(messagePayload));
   }
 
+
+  /**
+   * Handle Message
+   */
   const handleSend = async () => {
-    const typeEvent = Number(type) === 1 ? "room" : "people";
-    const username = localStorage.getItem("USER_NAME") || "";
     const messageList: IMessageDetail[] = [];
     const receivedName = name || "";
 
@@ -130,7 +129,7 @@ export default function ChatMainInput({ setMessages }: Props) {
            * Only add message if DB insert succeeded
            * publish event so directory can refresh immediately
            * then add to message list
-           *  */           
+           *  */
           if (inserted) {
             try {
               pubSub.publish("updateChatFiles", { sender: username, receiver: receivedName, file: inserted });
@@ -263,7 +262,33 @@ export default function ChatMainInput({ setMessages }: Props) {
 
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                const value = e.target.value;
+
+                if (value.length > 0) {
+                  if (!isTypingRef.current) {
+                    isTypingRef.current = true;
+                    sendTypingStatus(true);
+                  }
+
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+
+                  typingTimeoutRef.current = setTimeout(() => {
+                    isTypingRef.current = false;
+                    sendTypingStatus(false);
+                  }, 2000);
+                } else {
+                  isTypingRef.current = false;
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+                  sendTypingStatus(false);
+                }
+
+              }}
               onKeyPress={handleKeyPress}
               placeholder="Nhập tin nhắn"
               rows={1}
