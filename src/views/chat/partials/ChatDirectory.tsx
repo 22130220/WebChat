@@ -4,51 +4,52 @@ import FileItem from "../partials/FileItem";
 import { teamMembers } from "../../../data/TeamMemberMock";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useEvent } from "../../../hooks/useEvent";
+import { supabaseClient } from "../../../services/supabaseService";
 
 const ChatDirectory = () => {
   const params = useParams();
   const [chatFiles, setChatFiles] = useState<any[]>([])
   const [loading, setLoading] = useState(false);
-  const receiver = params.name; 
+  const receiver = params.name;
 
-  function connectSupabase() {
-    const supabaseUrl = 'https://covptfzrmxcrejmnilfl.supabase.co'
-    // const supabaseKey = process.env.SUPABASE_KEY
-    const supabaseKey = 'sb_publishable_vzIp7DswBJ1LKWlZ5Je90w_-Tz_RvRk'
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    return supabase;
+  const fetchFiles = async () => {
+    const sender = localStorage.getItem("USER_NAME") || "";
+    const to = receiver;
+    const supabase = supabaseClient;
+    const { data, error } = await supabase.from("chat_files")
+      .select("*")
+      .or(`and(sender.eq."${sender}",receiver.eq."${to}"),and(sender.eq."${to}",receiver.eq."${sender}")`)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error("Chi tiết lỗi:", error);
+    } else {
+      const formattedFiles = data.map(item => ({
+        id: item.id,
+        name: item.file_name,
+        type: item.file_type,
+        size: "Unknown",
+        url: item.file_url
+      }));
+      setChatFiles(formattedFiles);
+    }
+    setLoading(false);
   }
 
+  // Fetch files when receiver changes (param change)
   useEffect(() => {
-    const fetchFiles = async () => {
-      const sender = localStorage.getItem("USER_NAME") || "";
-      const to = receiver;
-      const supabase = connectSupabase();
-      const { data, error } = await supabase.from("chat_files")
-        .select("*")
-        .or(`and(sender.eq."${sender}",receiver.eq."${to}"),and(sender.eq."${to}",receiver.eq."${sender}")`)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error("Chi tiết lỗi:", error);
-      } else {
-          const formattedFiles = data.map(item => ({
-            id: item.id,
-            name: item.file_name,   
-            type: item.file_type,   
-            size: "Unknown",
-            url: item.file_url      
-          }));
-          setChatFiles(formattedFiles);
-      }
-      setLoading(false);
-
-    }
-
     if (receiver) {
       fetchFiles();
     }
   }, [receiver])
+
+  // Listen for file updates
+  useEvent("updateChatFiles", (data: any) => {
+    if (!data) return;
+    if (data.sender === receiver || data.receiver === receiver) {
+      fetchFiles();
+    }
+  });
 
   return (
     <div className="w-80 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] h-screen overflow-y-auto">

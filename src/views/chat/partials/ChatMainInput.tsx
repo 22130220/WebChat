@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 import { supabaseClient } from "../../../services/supabaseService";
+import pubSub from "../../../utils/eventBus";
 
 interface Props {
   setMessages: Function;
@@ -17,8 +18,8 @@ export default function ChatMainInput({ setMessages }: Props) {
   const [message, setMessage] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   // Handle Emoji Click
   const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -26,62 +27,73 @@ export default function ChatMainInput({ setMessages }: Props) {
     setShowPicker(false);
   };
 
-  // Handle File Change
+  /** Handle File Change (support multiple)
+   * files : currently selected files 
+   * newFiles : newly selected files
+   * 
+  */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
 
-      if (file.type.startsWith("image/")) {
-        setPreviewUrl(URL.createObjectURL(file));
-      } else {
-        setPreviewUrl(null);
-      }
-    }
+    const newFiles = [...selectedFiles, ...files];
+    setSelectedFiles(newFiles);
+
+    const newPreviews = files.map((f) => (f.type.startsWith("image/") ? URL.createObjectURL(f) : ""));
+    setPreviewUrls((prev) => [...prev, ...newPreviews]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const clearFile = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
+  const clearAllFiles = () => {
+    previewUrls.forEach((u) => u && URL.revokeObjectURL(u));
+    setSelectedFiles([]);
+    setPreviewUrls([]);
   };
 
-  async function getImageFromSupabase(selectedFile: File) {
-    const fileExt = selectedFile.name.split(".").pop();
+  const removeFileAt = (index: number) => {
+    const removed = selectedFiles[index];
+    if (!removed) return;
+    if (previewUrls[index]) URL.revokeObjectURL(previewUrls[index]);
+    const nextFiles = selectedFiles.filter((_, i) => i !== index);
+    const nextPreviews = previewUrls.filter((_, i) => i !== index);
+    setSelectedFiles(nextFiles);
+    setPreviewUrls(nextPreviews);
+  };
+
+  async function getImageFromSupabase(file: File) {
+    const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
     const supabase = supabaseClient;
-    const { data, error } = await supabase.storage
-      .from("webchat")
-      .upload(`chat/${fileName}`, selectedFile);
+    const { data, error } = await supabase.storage.from("webchat").upload(`chat/${fileName}`, file);
 
     if (error) throw error;
 
-    const { data: urlData } = await supabase.storage
-      .from("webchat")
-      .getPublicUrl(`chat/${fileName}`);
-    return urlData.publicUrl;
+    const { data: urlData } = await supabase.storage.from("webchat").getPublicUrl(`chat/${fileName}`);
+    return { publicUrl: urlData.publicUrl, path: data?.path || `chat/${fileName}` };
   }
 
-  async function insertFileToTable(
-    publicUrl: string,
-    sender: string,
-    receiver: string,
-    selectedFile: File,
-  ) {
+  async function insertFileToTable(publicUrl: string, sender: string, receiver: string, file: File) {
     const supabase = supabaseClient;
-    const { error } = await supabase.from("chat_files").insert([
-      {
-        sender: sender,
-        receiver: receiver,
-        file_url: publicUrl,
-        file_name: selectedFile.name,
-        file_type: selectedFile.type,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from("chat_files")
+      .insert([
+        {
+          sender: sender,
+          receiver: receiver,
+          file_url: publicUrl,
+          file_name: file.name,
+          file_type: file.type,
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
-      console.error("Cannot Upload File", error);
+      console.error("Cannot insert file row", error);
+      return null;
     }
+    return data;
   }
 
   const handleSend = async () => {
@@ -101,17 +113,46 @@ export default function ChatMainInput({ setMessages }: Props) {
       messageList.push(messageChat);
     }
 
-    if (selectedFile) {
-      const publicUrl = await getImageFromSupabase(selectedFile);
-      insertFileToTable(publicUrl, username, receivedName, selectedFile);
-      const imageChat: IMessageDetail = {
-        type: "IMAGE",
-        content: publicUrl,
-        sender: username,
-        to: `${name}`,
-        timestamp: new Date().toISOString(),
-      };
-      messageList.push(imageChat);
+    if (selectedFiles.length > 0) {
+      for (const file of selectedFiles) {
+        try {
+          const uploadResult = await getImageFromSupabase(file);
+          const publicUrl = uploadResult.publicUrl;
+
+          if (!publicUrl) {
+            console.error("No public URL returned for", file.name);
+            continue;
+          }
+
+          const inserted = await insertFileToTable(publicUrl, username, receivedName, file);
+
+          /**
+           * Only add message if DB insert succeeded
+           * publish event so directory can refresh immediately
+           * then add to message list
+           *  */           
+          if (inserted) {
+            try {
+              pubSub.publish("updateChatFiles", { sender: username, receiver: receivedName, file: inserted });
+            } catch (e) {
+              console.warn("Failed to publish chat_files_updated", e);
+            }
+
+            const imageChat: IMessageDetail = {
+              type: "IMAGE",
+              content: publicUrl,
+              sender: username,
+              to: `${name}`,
+              timestamp: new Date().toISOString(),
+            };
+            messageList.push(imageChat);
+          } else {
+            console.error("DB insert failed for", file.name);
+          }
+        } catch (err) {
+          console.error("Upload failed for file", file.name, err);
+        }
+      }
     }
 
     const messagePayload = {
@@ -142,7 +183,7 @@ export default function ChatMainInput({ setMessages }: Props) {
       ]);
     }
     setMessage("");
-    clearFile();
+    clearAllFiles();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -156,33 +197,37 @@ export default function ChatMainInput({ setMessages }: Props) {
     <>
       <div className="px-6 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]">
         {/* Preview File area */}
-        {selectedFile && (
-          <div className="mb-3 flex items-center">
-            <div className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="preview"
-                  className="w-12 h-12 object-cover rounded"
-                />
-              ) : (
-                <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
-              )}
-              <div className="flex flex-col pr-6">
-                <span className="text-xs font-medium truncate max-w-[150px] text-[var(--text-primary)]">
-                  {selectedFile.name}
-                </span>
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  {(selectedFile.size / 1024).toFixed(1)} KB
-                </span>
-              </div>
-              <button
-                onClick={clearFile}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+        {selectedFiles.length > 0 && (
+          <div className="mb-3 flex items-center gap-2 overflow-x-auto">
+            {selectedFiles.map((file, idx) => (
+              <div
+                key={`${file.name}-${idx}`}
+                className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
+                {previewUrls[idx] ? (
+                  <img src={previewUrls[idx]} alt={file.name} className="w-12 h-12 object-cover rounded" />
+                ) : (
+                  <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
+                )}
+                <div className="flex flex-col pr-6">
+                  <span className="text-xs font-medium truncate max-w-[150px] text-[var(--text-primary)]">
+                    {file.name}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    {(file.size / 1024).toFixed(1)} KB
+                  </span>
+                </div>
+                <button
+                  onClick={() => removeFileAt(idx)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button onClick={clearAllFiles} className="text-xs text-[var(--text-muted)] ml-2">
+              Clear all
+            </button>
           </div>
         )}
 
@@ -213,6 +258,7 @@ export default function ChatMainInput({ setMessages }: Props) {
               onChange={handleFileChange}
               className="hidden"
               accept="image/*,.pdf,.doc,.docx"
+              multiple
             />
 
             <textarea
