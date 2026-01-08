@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useEvent } from "../../../hooks/useEvent";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
-import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
+import type { IMessageDetail, RawMessageItem } from "../../../types/interfaces/IMessageDetail";
 import { ArrowDown, Download, X } from "lucide-react";
 
 interface IChatMainProps {
@@ -123,16 +125,73 @@ export default function ChatMainPartial({
     }
   }, [messages]);
 
-  const messageDetailList = useMemo(() => {
+  /**
+   * Previous version filtering out typing status
+   */
+  // const messageDetailList = useMemo(() => {
+  //   return messages.flatMap((msg) => {
+  //     try {
+  //       const parsed: IMessageDetail[] = JSON.parse(msg.mes);
+  //       return parsed;
+  //     } catch (error) {
+  //       return [];
+  //     }
+  //   });
+  // }, [messages]);
+
+
+  /**
+   * Handle Code by Tai - filtering out typing status
+   */
+   const messageDetailList = useMemo(() => {
     return messages.flatMap((msg) => {
       try {
         const parsed: IMessageDetail[] = JSON.parse(msg.mes);
-        return parsed;
+        const filtered = Array.isArray(parsed)
+          ? parsed.filter((item: any) => item?.type !== "TYPING_STATUS")
+          : [];
+        return filtered.length > 0 ? filtered : [];
       } catch (error) {
         return [];
       }
     });
   }, [messages]);
+
+  const { name: partnerName } = useParams();
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const typingTimerRef = useRef<number | null>(null);
+
+  /**
+   * 
+   * Only handle typing events from the current partner to me
+   * Example: partnerName = "alice", username = "bob"
+   * When receiving typing status from alice to bob, show typing indicator
+   * When receiving typing status from bob to alice, ignore
+   */
+  useEvent("typing_status", (payload: any) => {
+    try {
+      const t = payload?.data || payload; // handle either {data: t} or direct t
+      if (!t) return;
+      if (t.sender === partnerName && t.receiver === username) {
+        if (t.isTyping) {
+          setIsPartnerTyping(true);
+          if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+          typingTimerRef.current = window.setTimeout(() => {
+            setIsPartnerTyping(false);
+            typingTimerRef.current = null;
+          }, 4000);
+        } else {
+          setIsPartnerTyping(false);
+          if (typingTimerRef.current) {
+            window.clearTimeout(typingTimerRef.current);
+            typingTimerRef.current = null;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to process typing status", e);
+    }
+  });
 
   return (
     <div className="relative flex-1 flex flex-col overflow-hidden">
@@ -167,7 +226,7 @@ export default function ChatMainPartial({
                   >
                     {msg.type === "TEXT" ? (
                       <p className="text-sm">{msg.content}</p>
-                    ) : (
+                    ) : msg.type === "IMAGE" ? (
                       <img
                         src={msg.content}
                         alt="sent"
@@ -179,7 +238,11 @@ export default function ChatMainPartial({
                           })
                         }
                       />
-                    )}
+                    ) : msg.type === "TYPING_STATUS" ? (
+                      msg ? (
+                        <div className="text-sm italic text-[var(--text-muted)]">Đang nhập...</div>
+                      ) : null
+                    ) : null}
                   </div>
                   {username === msg.sender && (
                     <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0">
@@ -190,6 +253,14 @@ export default function ChatMainPartial({
               );
             })}
         </div>
+        {isPartnerTyping && (
+          <div className="mt-2 flex justify-start">
+            <div className="max-w-md px-4 py-2 rounded-2xl bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)] italic text-sm">
+              Đang nhập...
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
