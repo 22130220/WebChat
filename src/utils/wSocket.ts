@@ -53,7 +53,11 @@ function createSocket(path: string) {
             break;
           }
           case "SEND_CHAT": {
-            pubSub.publish(`receive_chat:${data.data.name}`, data)
+            if (data.data.type === 1) {
+              pubSub.publish(`receive_chat:${data.data.to}`, data)
+            } else if (data.data.type === 0) {
+              pubSub.publish(`receive_chat:${data.data.name}`, data)
+            }
             break;
           }
           case "CREATE_ROOM": {
