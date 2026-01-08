@@ -1,1 +1,0 @@
-import{b as r,d as o,u as c,P as i,r as u,j as d,e as g}from"./index-DF_He8ro.js";function p(){const e=r(n=>n.settings),[s]=o(),a=c(),t=s.get("redirectTo")||i.LOGIN;return u.useEffect(()=>{e.connected&&t&&a(t)},[e.connected]),d.jsx(g,{show:!e.connected,text:"Đang kết nối tới server"})}export{p as default};
