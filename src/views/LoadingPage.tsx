@@ -4,15 +4,13 @@ import type { RootState } from "../stores/store";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { PATH_CONSTRAINT } from "../routers";
-import pubSub from "../utils/eventBus";
-import wSocket from "../utils/wSocket";
 
 function LoadingPage() {
   const settings = useSelector((state: RootState) => state.settings);
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const redirectTo = params.get("redirectTo") || PATH_CONSTRAINT.CHAT;
+  const redirectTo = params.get("redirectTo") || PATH_CONSTRAINT.LOGIN;
 
   useEffect(() => {
     if (settings.connected && redirectTo) {

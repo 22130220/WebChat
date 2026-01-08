@@ -4,8 +4,8 @@ import { useRef, useState } from "react";
 import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
-import { createClient } from "@supabase/supabase-js";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
+import { supabaseClient } from "../../../services/supabaseService";
 
 interface Props {
   setMessages: Function;
@@ -24,7 +24,7 @@ export default function ChatMainInput({ setMessages }: Props) {
   const onEmojiClick = (emojiData: EmojiClickData) => {
     setMessage(message + emojiData.emoji);
     setShowPicker(false);
-  }
+  };
 
   // Handle File Change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,97 +45,59 @@ export default function ChatMainInput({ setMessages }: Props) {
     setPreviewUrl(null);
   };
 
-  // const handleSend = () => {
-  //   const typeEvent = Number(type) === 1 ? "room" : "people";
-  //   const username = localStorage.getItem("USER_NAME") || "";
-  //   if (message.trim()) {
-  //     const messagePayload = {
-  //       action: "onchat",
-  //       data: {
-  //         event: "SEND_CHAT",
-  //         data: {
-  //           type: `${typeEvent}`,
-  //           to: `${name}`,
-  //           mes: `${message.trim()}`,
-  //         },
-  //       },
-  //     };
-  //     console.log(messagePayload);
-  //     wSocket.send(JSON.stringify(messagePayload));
-  //     setMessages((prev) => [
-  //       {
-  //         id: prev.length + 1,
-  //         to: "phucdz2",
-  //         mes: message.trim(),
-  //         name: `${username}`,
-  //         type: 1,
-  //         createAt: new Date().toISOString(),
-  //       } as IChatMessage,
-  //       ...prev,
-  //     ]);
-  //     setMessage("");
-  //   }
-  // };
-
-  function connectSupabase() {
-    const supabaseUrl = 'https://covptfzrmxcrejmnilfl.supabase.co'
-    // const supabaseKey = process.env.SUPABASE_KEY
-    const supabaseKey = 'sb_publishable_vzIp7DswBJ1LKWlZ5Je90w_-Tz_RvRk'
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    return supabase;
-  }
-
   async function getImageFromSupabase(selectedFile: File) {
-    const fileExt = selectedFile.name.split('.').pop();
+    const fileExt = selectedFile.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    const supabase = connectSupabase();
+    const supabase = supabaseClient;
     const { data, error } = await supabase.storage
-      .from('webchat')
+      .from("webchat")
       .upload(`chat/${fileName}`, selectedFile);
 
     if (error) throw error;
 
     const { data: urlData } = await supabase.storage
-      .from('webchat')
+      .from("webchat")
       .getPublicUrl(`chat/${fileName}`);
     return urlData.publicUrl;
   }
 
-  async function insertFileToTable(publicUrl: string, sender: string, receiver: string, selectedFile: File) {
-    const supabase = connectSupabase();
-    const { error } = await supabase
-    .from("chat_files")
-    .insert([
+  async function insertFileToTable(
+    publicUrl: string,
+    sender: string,
+    receiver: string,
+    selectedFile: File,
+  ) {
+    const supabase = supabaseClient;
+    const { error } = await supabase.from("chat_files").insert([
       {
         sender: sender,
         receiver: receiver,
         file_url: publicUrl,
         file_name: selectedFile.name,
-        file_type: selectedFile.type
-      }
+        file_type: selectedFile.type,
+      },
     ]);
-    
-    if(error) {
+
+    if (error) {
       console.error("Cannot Upload File", error);
     }
-  } 
-
+  }
 
   const handleSend = async () => {
     const typeEvent = Number(type) === 1 ? "room" : "people";
     const username = localStorage.getItem("USER_NAME") || "";
     const messageList: IMessageDetail[] = [];
-    const receivedName = name || ""
+    const receivedName = name || "";
 
     if (message.trim()) {
       const messageChat: IMessageDetail = {
         type: "TEXT",
         content: message,
         sender: username,
-        to: "phucdz2",
-        timestamp: new Date().toISOString()
-      }
+        to: `${name}`,
+        timestamp: new Date().toISOString(),
+      };
       messageList.push(messageChat);
     }
 
@@ -146,9 +108,9 @@ export default function ChatMainInput({ setMessages }: Props) {
         type: "IMAGE",
         content: publicUrl,
         sender: username,
-        to: "phucdz2",
-        timestamp: new Date().toISOString()
-      }
+        to: `${name}`,
+        timestamp: new Date().toISOString(),
+      };
       messageList.push(imageChat);
     }
 
@@ -165,20 +127,22 @@ export default function ChatMainInput({ setMessages }: Props) {
     };
     console.log(messagePayload);
     wSocket.send(JSON.stringify(messagePayload));
-    
-    setMessages((prev) => [
-      {
-        id: prev.length + 1,
-        to: "phucdz2",
-        mes: JSON.stringify(messageList),
-        name: `${username}`,
-        type: 1,
-        createAt: new Date().toISOString(),
-      } as IChatMessage,
-      ...prev,
-    ]);
-    setMessage("");
-    clearFile();
+
+    if (Number(type) === 1) {
+      setMessages((prev) => [
+        {
+          id: prev.length + 1,
+          to: `${name}`,
+          mes: JSON.stringify(messageList),
+          name: `${username}`,
+          type: Number(type),
+          createAt: new Date().toISOString(),
+        } as IChatMessage,
+        ...prev,
+      ]);
+      setMessage("");
+      clearFile();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -196,13 +160,21 @@ export default function ChatMainInput({ setMessages }: Props) {
           <div className="mb-3 flex items-center">
             <div className="relative p-2 bg-gray-100 rounded-lg flex items-center gap-2 border border-gray-200">
               {previewUrl ? (
-                <img src={previewUrl} alt="preview" className="w-12 h-12 object-cover rounded" />
+                <img
+                  src={previewUrl}
+                  alt="preview"
+                  className="w-12 h-12 object-cover rounded"
+                />
               ) : (
                 <FileText className="w-8 h-8 text-indigo-500" />
               )}
               <div className="flex flex-col pr-6">
-                <span className="text-xs font-medium truncate max-w-[150px]">{selectedFile.name}</span>
-                <span className="text-[10px] text-gray-500">{(selectedFile.size / 1024).toFixed(1)} KB</span>
+                <span className="text-xs font-medium truncate max-w-[150px]">
+                  {selectedFile.name}
+                </span>
+                <span className="text-[10px] text-gray-500">
+                  {(selectedFile.size / 1024).toFixed(1)} KB
+                </span>
               </div>
               <button
                 onClick={clearFile}
@@ -215,7 +187,8 @@ export default function ChatMainInput({ setMessages }: Props) {
         )}
 
         <div className="flex flex-row items-center justify-items-center gap-3">
-          <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400"
+          <button
+            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400"
             onClick={() => fileInputRef.current?.click()}
           >
             <svg
@@ -233,7 +206,6 @@ export default function ChatMainInput({ setMessages }: Props) {
             </svg>
           </button>
           <div className="flex-1 relative">
-
             {/* Input File */}
             <input
               type="file"
@@ -251,7 +223,8 @@ export default function ChatMainInput({ setMessages }: Props) {
               rows={1}
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
-            <button className="absolute right-3 bottom-5 text-gray-400 hover:text-gray-600"
+            <button
+              className="absolute right-3 bottom-5 text-gray-400 hover:text-gray-600"
               onClick={() => setShowPicker(!showPicker)}
             >
               <SmilePlus size={20} />
@@ -285,5 +258,3 @@ export default function ChatMainInput({ setMessages }: Props) {
     </>
   );
 }
-
-
