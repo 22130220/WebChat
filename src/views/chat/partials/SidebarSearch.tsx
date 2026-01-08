@@ -13,17 +13,17 @@ const SidebarSearch: React.FC<SidebarSearchProps> = ({ onSearch }) => {
   };
 
   return (
-    <div className="p-3 border-b border-gray-200">
+    <div className="p-3 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]">
       <div className="relative">
         <input
           type="text"
           value={searchTerm}
           onChange={handleSearchChange}
           placeholder="Tìm người hoặc nhóm..."
-          className="w-full px-3 py-2 pl-8 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 pl-8 text-sm bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
         />
         <svg 
-          className="w-4 h-4 absolute left-2.5 top-2.5 text-gray-400" 
+          className="w-4 h-4 absolute left-2.5 top-2.5 text-[var(--text-muted)]" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"

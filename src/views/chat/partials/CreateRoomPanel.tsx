@@ -279,16 +279,16 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
         onClick={handleClose}
       />
       
-      <div className="absolute left-full top-0 w-64 bg-white border border-gray-200 rounded-r-lg shadow-xl z-50">
+      <div className="absolute left-full top-0 w-64 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-r-lg shadow-xl z-50">
         <div className="p-4 flex flex-col">
           {/* Header with Close Button */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
               {isRoom ? 'Tạo phòng mới' : 'Thêm bạn bè'}
             </h3>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               disabled={isLoading} //  Disable khi đang loading
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +307,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
                 setRoomName(e.target.value);
                 setError(''); // Clear error when typing
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              className="w-full px-4 py-2 border border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] text-sm"
               disabled={isLoading} //  Disable khi đang loading
             />
           </div>
@@ -328,10 +328,10 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
                   setIsRoom(e.target.checked);
                   setError(''); // Clear error when toggling
                 }}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="w-4 h-4 text-[var(--accent-primary)] border-[var(--border-primary)] rounded focus:ring-[var(--accent-primary)]"
                 disabled={isLoading} //  Disable khi đang loading
               />
-              <span className="text-sm text-gray-700">Phòng</span>
+              <span className="text-sm text-[var(--text-primary)]">Phòng</span>
             </label>
           </div>
 
@@ -346,7 +346,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
                   className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
                     isLoading
                       ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white'
                   }`}
                   title="Tạo phòng"
                 >
@@ -367,7 +367,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
                   className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${
                     isLoading
                       ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white'
                   }`}
                   title="Tham gia phòng"
                 >
@@ -384,7 +384,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
                 className={`w-full px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                   isLoading
                     ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white'
                 }`}
               >
                 {isLoading ? (

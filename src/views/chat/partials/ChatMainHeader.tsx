@@ -4,22 +4,22 @@ export default function ChatMainHeader() {
   const { name, type } = useParams();
   return (
     <>
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl">
+          <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-xl">
             👨‍💻
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">
+            <h2 className="font-semibold text-[var(--text-primary)]">
               {name} {Number(type) === 1 ? ` - Nhóm` : ``}
             </h2>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs text-gray-500">Trực tuyến</span>
+              <span className="text-xs text-[var(--text-muted)]">Trực tuyến</span>
             </div>
           </div>
         </div>
-        <button className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md flex items-center gap-2 font-medium">
+        <button className="px-4 py-2 text-[var(--accent-primary)] hover:bg-[var(--accent-light)] rounded-md flex items-center gap-2 font-medium transition-colors">
           <svg
             className="w-5 h-5"
             fill="none"

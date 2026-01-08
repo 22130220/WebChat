@@ -47,7 +47,7 @@ const ChatMain: React.FC = () => {
   useEvent("get_people_chat_messages_success", setPeopleChatMess);
 
   return (
-    <div className="flex-1 flex flex-col bg-white h-screen">
+    <div className="flex-1 flex flex-col bg-[var(--bg-primary)] h-screen">
       {/* Header */}
       <ChatMainHeader />
       {/* Messages */}

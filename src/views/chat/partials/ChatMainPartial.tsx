@@ -80,8 +80,8 @@ export default function ChatMainPartial({ messages }: IChatMainProps) {
               )}
               <div
                 className={`max-w-md px-4 py-2 rounded-2xl ${username === msg.sender
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-900"
+                  ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
+                  : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
                   }`}
               >
                 {msg.type === "TEXT" ? (
