@@ -114,7 +114,7 @@ const ChatSidebar = () => {
       const newUser: IMessage = {
         name: senderName,
         avatar: messageType === 1 ? "👥" : "👨‍💼",
-        actionTime: data.data.createAt || new Date().toISOString(),
+        actionTime: data.data.createAt || new Date().toLocaleString('vi-VN'),
         type: messageType,
       };
       

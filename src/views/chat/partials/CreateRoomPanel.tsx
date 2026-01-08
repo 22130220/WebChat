@@ -3,6 +3,7 @@ import wSocket from '../../../utils/wSocket';
 import { useEvent } from '../../../hooks/useEvent';
 import ToastSuccess from '../../../components/ToastSuccess';
 import { useNavigate } from 'react-router-dom';
+import { timeoutManager } from '../../../utils/timeoutManager';
 
 interface CreateRoomPanelProps {
   onClose: () => void;
@@ -31,11 +32,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleCreateRoomSuccess = useCallback((data: any) => {
     console.log('Room created successfully:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__createRoomTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__createRoomTimeout);
-    }
+    timeoutManager.clear('createRoom');
     setIsLoading(false);
     
     // Hiển thị toast thành công
@@ -59,11 +56,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleCreateRoomError = useCallback((data: any) => {
     console.log('Room creation error:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__createRoomTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__createRoomTimeout);
-    }
+    timeoutManager.clear('createRoom');
     setIsLoading(false);
     if (data.mes === 'Room Exist') {
       setError('Phòng đã tồn tại');
@@ -76,11 +69,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleJoinRoomSuccess = useCallback((data: any) => {
     console.log('Joined room successfully:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__joinRoomTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__joinRoomTimeout);
-    }
+    timeoutManager.clear('joinRoom');
     setIsLoading(false);
     
     // Hiển thị toast thành công
@@ -103,11 +92,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleJoinRoomError = useCallback((data: any) => {
     console.log('Join room error:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__joinRoomTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__joinRoomTimeout);
-    }
+    timeoutManager.clear('joinRoom');
     setIsLoading(false);
     if (data.mes === 'Room not found') {
       setError('Phòng không tồn tại');
@@ -120,11 +105,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleCheckUserSuccess = useCallback((data: any) => {
     console.log('User check response:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__checkUserTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__checkUserTimeout);
-    }
+    timeoutManager.clear('checkUser');
     setIsLoading(false);
     
     // Kiểm tra data.data.status để xác định người dùng có tồn tại không
@@ -149,11 +130,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
   const handleCheckUserError = useCallback((data: any) => {
     console.log('User check error:', data);
     // Clear timeout nếu có
-    // @ts-ignore
-    if (window.__checkUserTimeout) {
-      // @ts-ignore
-      clearTimeout(window.__checkUserTimeout);
-    }
+    timeoutManager.clear('checkUser');
     setIsLoading(false);
     setError('Người dùng không tồn tại');
   }, []);
@@ -195,7 +172,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     // Nếu sau 2 giây không nhận được response,
     // tự động refresh user list và đóng panel
     // (Trường hợp server tạo phòng thành công nhưng không gửi response về)
-    const timeoutId = setTimeout(() => {
+    timeoutManager.set('createRoom', () => {
       console.log('⚠️ Timeout waiting for CREATE_ROOM response, auto-refreshing user list');
       setIsLoading(false);
       
@@ -213,10 +190,6 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
         handleClose();
       }, 2000);
     }, 2000);
-
-    // Lưu timeout ID để có thể clear nếu nhận được response
-    // @ts-ignore
-    window.__createRoomTimeout = timeoutId;
   };
 
   const handleJoinRoom = () => {
@@ -248,7 +221,7 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
 
     // Nếu sau 2 giây không nhận được response,
     // tự động refresh user list và đóng panel
-    const timeoutId = setTimeout(() => {
+    timeoutManager.set('joinRoom', () => {
       console.log('⚠️ Timeout waiting for JOIN_ROOM response, auto-refreshing user list');
       setIsLoading(false);
       
@@ -266,10 +239,6 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
         handleClose();
       }, 2000);
     }, 2000);
-
-    // Lưu timeout ID để có thể clear nếu nhận được response
-    // @ts-ignore
-    window.__joinRoomTimeout = timeoutId;
   };
 
   const handleAddFriend = () => {
@@ -295,14 +264,11 @@ const CreateRoomPanel: React.FC<CreateRoomPanelProps> = ({ onClose, onRoomCreate
     wSocket.send(JSON.stringify(checkUserPayload));
 
     // Timeout fallback
-    const timeoutId = setTimeout(() => {
+    timeoutManager.set('checkUser', () => {
       console.log('⚠️ Timeout waiting for CHECK_USER_EXIST response');
       setIsLoading(false);
       setError('Không thể kiểm tra người dùng. Vui lòng thử lại.');
     }, 5000);
-
-    // @ts-ignore
-    window.__checkUserTimeout = timeoutId;
   };
 
   return (
