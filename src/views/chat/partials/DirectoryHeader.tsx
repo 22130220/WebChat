@@ -1,7 +1,7 @@
 const DirectoryHeader = () => (
-  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 className="font-semibold text-gray-900">Thông tin hội thoại</h2>
-    <button className="text-gray-400 hover:text-gray-600">
+  <div className="p-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex items-center justify-between">
+    <h2 className="font-semibold text-[var(--text-primary)]">Thông tin hội thoại</h2>
+    <button className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
       <svg
         className="w-5 h-5"
         fill="none"

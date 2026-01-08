@@ -154,11 +154,11 @@ export default function ChatMainInput({ setMessages }: Props) {
 
   return (
     <>
-      <div className="px-6 py-4 border-t border-gray-200">
+      <div className="px-6 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]">
         {/* Preview File area */}
         {selectedFile && (
           <div className="mb-3 flex items-center">
-            <div className="relative p-2 bg-gray-100 rounded-lg flex items-center gap-2 border border-gray-200">
+            <div className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]">
               {previewUrl ? (
                 <img
                   src={previewUrl}
@@ -166,13 +166,13 @@ export default function ChatMainInput({ setMessages }: Props) {
                   className="w-12 h-12 object-cover rounded"
                 />
               ) : (
-                <FileText className="w-8 h-8 text-indigo-500" />
+                <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
               )}
               <div className="flex flex-col pr-6">
-                <span className="text-xs font-medium truncate max-w-[150px]">
+                <span className="text-xs font-medium truncate max-w-[150px] text-[var(--text-primary)]">
                   {selectedFile.name}
                 </span>
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[10px] text-[var(--text-muted)]">
                   {(selectedFile.size / 1024).toFixed(1)} KB
                 </span>
               </div>
@@ -188,7 +188,7 @@ export default function ChatMainInput({ setMessages }: Props) {
 
         <div className="flex flex-row items-center justify-items-center gap-3">
           <button
-            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400"
+            className="w-10 h-10 rounded-full hover:bg-[var(--bg-hover)] flex items-center justify-center text-[var(--text-muted)] transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
             <svg
@@ -221,10 +221,10 @@ export default function ChatMainInput({ setMessages }: Props) {
               onKeyPress={handleKeyPress}
               placeholder="Nhập tin nhắn"
               rows={1}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 pr-12 border border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-transparent"
             />
             <button
-              className="absolute right-3 bottom-5 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 bottom-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               onClick={() => setShowPicker(!showPicker)}
             >
               <SmilePlus size={20} />
@@ -237,7 +237,7 @@ export default function ChatMainInput({ setMessages }: Props) {
           )}
           <button
             onClick={handleSend}
-            className="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white"
+            className="w-10 h-10 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-white transition-colors"
           >
             <svg
               className="w-5 h-5"

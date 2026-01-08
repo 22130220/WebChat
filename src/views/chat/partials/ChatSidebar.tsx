@@ -173,7 +173,7 @@ const ChatSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col relative">
+    <div className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] h-screen flex flex-col relative">
       <SidebarHeader
         setShowCreateRoom={setShowCreateRoom}
         quantityUser={filteredMessages.length}
@@ -195,7 +195,7 @@ const ChatSidebar = () => {
             />
           ))
         ) : (
-          <div className="p-4 text-center text-gray-500 text-sm">
+          <div className="p-4 text-center text-[var(--text-muted)] text-sm">
             {searchTerm ? "Không tìm thấy kết quả" : "Đang load dữ liệu..."}
           </div>
         )}

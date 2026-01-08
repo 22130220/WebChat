@@ -39,7 +39,7 @@ const FileItem = ({ file }: Props) => {
   }
 
   return (<>
-    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer group">
+    <div className="flex items-center gap-3 p-3 hover:bg-[var(--bg-hover)] rounded-lg cursor-pointer group transition-colors">
 
       <div
         className={`w-10 h-10 rounded-lg flex items-center justify-center text-2xl flex-shrink-0 ${getFileBg(file.type)}`}
@@ -58,15 +58,15 @@ const FileItem = ({ file }: Props) => {
           name: file.name
         })}
       >
-        <h4 className="font-medium text-sm text-gray-900 truncate">
+        <h4 className="font-medium text-sm text-[var(--text-primary)] truncate">
           {file.name}
         </h4>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-[var(--text-muted)]">
           {file.type} · {file.size}
         </p>
       </div>
 
-      <button className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-400 transition-opacity"
+      <button className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full hover:bg-[var(--bg-hover)] flex items-center justify-center text-[var(--text-muted)] transition-all"
         onClick={handleDownload}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

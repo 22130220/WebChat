@@ -10,8 +10,8 @@ const MessageItem = ({ message, activeMessageName }: Props) => {
   return (
     <NavLink to={`/chat/${message.name}/type/${message.type}`}>
       <div
-        className={`p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 ${
-          message.name === activeMessageName ? "bg-white" : ""
+        className={`p-3 hover:bg-[var(--bg-hover)] cursor-pointer border-b border-[var(--border-primary)] ${
+          message.name === activeMessageName ? "bg-[var(--bg-primary)]" : ""
         }`}
       >
         <div className="flex items-start gap-3">
@@ -21,15 +21,15 @@ const MessageItem = ({ message, activeMessageName }: Props) => {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-medium text-sm text-gray-900 truncate">
+              <h3 className="font-medium text-sm text-[var(--text-primary)] truncate">
                 {message.name}
               </h3>
-              <span className="text-xs text-gray-500 ml-2">
+              <span className="text-xs text-[var(--text-muted)] ml-2">
                 {message.actionTime}
               </span>
             </div>
 
-            <p className="text-sm text-gray-600 truncate mb-2"></p>
+            <p className="text-sm text-[var(--text-secondary)] truncate mb-2"></p>
           </div>
         </div>
       </div>
