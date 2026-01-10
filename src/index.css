@@ -45,6 +45,7 @@
   /* Chat Specific */
   --chat-bubble-sent: #6366f1;
   --chat-bubble-received: #f3f4f6;
+  --chat-bubble-forwarded: #e0e7ff;
   --chat-text-sent: #ffffff;
   --chat-text-received: #111827;
 }
@@ -91,6 +92,7 @@
   /* Chat Specific */
   --chat-bubble-sent: #6366f1;
   --chat-bubble-received: #374151;
+  --chat-bubble-forwarded: #3730a3;
   --chat-text-sent: #ffffff;
   --chat-text-received: #f9fafb;
 }
@@ -137,6 +139,7 @@
     /* Chat Specific */
     --chat-bubble-sent: #6366f1;
     --chat-bubble-received: #374151;
+    --chat-bubble-forwarded: #3730a3;
     --chat-text-sent: #ffffff;
     --chat-text-received: #f9fafb;
   }

@@ -3,13 +3,15 @@ import counterReducer from './counterSlice.ts'
 import settingReducer from './settingSlice.ts'
 import themeReducer from './themeSlice.ts'
 import onlineStatusReducer from './onlineStatusSlice.ts'
+import recipientsReducer from './recipientsSlice.ts'
 
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
     settings: settingReducer,
     theme: themeReducer,
-    onlineStatus: onlineStatusReducer
+    onlineStatus: onlineStatusReducer,
+    recipients: recipientsReducer,
   },
 })
 

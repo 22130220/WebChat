@@ -3,7 +3,10 @@ import { useParams } from "react-router-dom";
 import { useEvent } from "../../../hooks/useEvent";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
 import type { IMessageDetail, RawMessageItem } from "../../../types/interfaces/IMessageDetail";
-import { ArrowDown, Download, X } from "lucide-react";
+import { ArrowDown, Download, X, Forward } from "lucide-react";
+import ForwardMessageModal from "./ForwardMessageModal";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../stores/store";
 
 interface IChatMainProps {
   messages: Array<IChatMessage>;
@@ -25,6 +28,11 @@ export default function ChatMainPartial({
     name: string;
   } | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [messageToForward, setMessageToForward] = useState<IMessageDetail | null>(null);
+  const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
+  
+  // Lấy recipients từ Redux store
+  const recipients = useSelector((state: RootState) => state.recipients.recipients);
 
   // Scroll xuống cuối
   const scrollToBottom = () => {
@@ -210,39 +218,57 @@ export default function ChatMainPartial({
               return (
                 <div
                   key={index}
-                  className={`flex ${username === msg.sender ? "justify-end" : "justify-start"}`}
+                  className={`flex ${username === msg.sender ? "justify-end" : "justify-start"} group`}
+                  onMouseEnter={() => setHoveredMessageIndex(index)}
+                  onMouseLeave={() => setHoveredMessageIndex(null)}
                 >
                   {username !== msg.sender && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0">
                       👨‍💻
                     </div>
                   )}
-                  <div
-                    className={`max-w-md px-4 py-2 rounded-2xl ${
-                      username === msg.sender
-                        ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
-                        : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
-                    }`}
-                  >
-                    {msg.type === "TEXT" ? (
-                      <p className="text-sm">{msg.content}</p>
-                    ) : msg.type === "IMAGE" ? (
-                      <img
-                        src={msg.content}
-                        alt="sent"
-                        className="rounded-lg max-w-full h-auto"
-                        onClick={() =>
-                          setSelectedImage({
-                            imageUrl: msg.content,
-                            name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`,
-                          })
-                        }
-                      />
-                    ) : msg.type === "TYPING_STATUS" ? (
-                      msg ? (
-                        <div className="text-sm italic text-[var(--text-muted)]">Đang nhập...</div>
-                      ) : null
-                    ) : null}
+                  <div className="flex flex-col max-w-md">
+                    <div className="relative">
+                      <div
+                        className={`px-4 py-2 rounded-2xl ${
+                          username === msg.sender
+                            ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
+                            : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
+                        }`}
+                      >
+                        {msg.type === "TEXT" ? (
+                          <p className="text-sm">{msg.content}</p>
+                        ) : msg.type === "IMAGE" || (msg.type === "FORWARDED" && msg.originalType === "IMAGE") ? (
+                          <img
+                            src={msg.content}
+                            alt="sent"
+                            className="rounded-lg max-w-full h-auto"
+                            onClick={() =>
+                              setSelectedImage({
+                                imageUrl: msg.content,
+                                name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`,
+                              })
+                            }
+                          />
+                        ) : msg.type === "FORWARDED" && msg.originalType === "TEXT" ? (
+                          <p className="text-sm">{msg.content}</p>
+                        ) : msg.type === "TYPING_STATUS" ? (
+                          msg ? (
+                            <div className="text-sm italic text-[var(--text-muted)]">Đang nhập...</div>
+                          ) : null
+                        ) : null}
+                      </div>
+                      {/* Forward button */}
+                      {hoveredMessageIndex === index && (msg.type === "TEXT" || msg.type === "IMAGE" || msg.type === "FORWARDED") && recipients.length > 0 && (
+                        <button
+                          onClick={() => setMessageToForward(msg)}
+                          className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] p-1.5 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+                          title="Chuyển tiếp"
+                        >
+                          <Forward size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {username === msg.sender && (
                     <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0">
@@ -313,6 +339,15 @@ export default function ChatMainPartial({
             </a>
           </div>
         </div>
+      )}
+
+      {/* Forward Message Modal */}
+      {messageToForward && (
+        <ForwardMessageModal
+          message={messageToForward}
+          recipients={recipients}
+          onClose={() => setMessageToForward(null)}
+        />
       )}
     </div>
   );
