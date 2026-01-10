@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import backgroundleft from "../login/backgroundLeft.png";
-import image from "../login/image.png";
+import backgroundleft from "../../assets/backgroundLeft.png";
+import image from "../../assets/image.png";
 import { useState } from "react";
 import { useEvent } from "../../hooks/useEvent";
 import wSocket from "../../utils/wSocket";

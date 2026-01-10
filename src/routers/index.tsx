@@ -1,6 +1,7 @@
 import {
   createBrowserRouter,
   redirect,
+  type LoaderFunctionArgs,
   type RouteObject,
 } from "react-router-dom";
 import { store } from "../stores/store";
@@ -50,7 +51,7 @@ async function userLoader() {
   }
 }
 
-async function checkConnectionLoader({ request }) {
+async function checkConnectionLoader({ request }: LoaderFunctionArgs) {
   const settings = store.getState().settings;
   if (settings && !settings.connected) {
     const url = new URL(request.url);
@@ -62,12 +63,17 @@ async function checkConnectionLoader({ request }) {
   return null;
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      element: <Default />,
+      errorElement: <div>Đã có lỗi xảy ra</div>,
+      children: routes,
+    },
+  ],
   {
-    element: <Default />,
-    errorElement: <div>Đã có lỗi xảy ra</div>,
-    children: routes,
+    basename: "/WebChat",
   },
-]);
+);
 
 export default router;

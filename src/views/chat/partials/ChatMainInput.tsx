@@ -50,13 +50,13 @@ export default function ChatMainInput({ setMessages }: Props) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
     const supabase = supabaseClient;
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("webchat")
       .upload(`chat/${fileName}`, selectedFile);
 
     if (error) throw error;
 
-    const { data: urlData } = await supabase.storage
+    const { data: urlData } = supabase.storage
       .from("webchat")
       .getPublicUrl(`chat/${fileName}`);
     return urlData.publicUrl;
@@ -129,7 +129,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     wSocket.send(JSON.stringify(messagePayload));
 
     if (Number(type) === 0) {
-      setMessages((prev) => [
+      setMessages((prev: any) => [
         {
           id: prev.length + 1,
           to: `${name}`,
@@ -218,7 +218,7 @@ export default function ChatMainInput({ setMessages }: Props) {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Nhập tin nhắn"
               rows={1}
               className="w-full px-4 py-3 pr-12 border border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-transparent"
