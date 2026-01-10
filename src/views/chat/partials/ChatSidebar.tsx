@@ -14,6 +14,8 @@ import {
   getUserContacts,
   mergeUserLists,
 } from "../../../services/firebaseUserService";
+import { useDispatch } from "react-redux";
+import { setRecipients } from "../../../stores/recipientsSlice";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -21,6 +23,7 @@ const ChatSidebar = () => {
   const [messages, setMessages] = React.useState<IMessage[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const fetchUserList = () => {
     console.log("Requesting user list");
@@ -156,6 +159,11 @@ const ChatSidebar = () => {
       return msg.name?.toLowerCase().includes(lowercaseSearch);
     });
   }, [messages, searchTerm]);
+
+  // Cập nhật recipients trong Redux store khi messages thay đổi
+  useEffect(() => {
+    dispatch(setRecipients(messages));
+  }, [messages, dispatch]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
