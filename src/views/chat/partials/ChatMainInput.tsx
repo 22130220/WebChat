@@ -5,9 +5,13 @@ import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
-import { getImageFromSupabase, insertFileToTable } from "../../../services/supabaseService";
+import {
+  getImageFromSupabase,
+  insertFileToTable,
+} from "../../../services/supabaseService";
 import pubSub from "../../../utils/eventBus";
 import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
+import { pasteClipboard } from "../../../services/clipboardServices";
 
 interface Props {
   setMessages: Function;
@@ -34,10 +38,10 @@ export default function ChatMainInput({ setMessages }: Props) {
   };
 
   /** Handle File Change (support multiple)
-   * files : currently selected files 
+   * files : currently selected files
    * newFiles : newly selected files
-   * 
-  */
+   *
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length === 0) return;
@@ -45,7 +49,9 @@ export default function ChatMainInput({ setMessages }: Props) {
     const newFiles = [...selectedFiles, ...files];
     setSelectedFiles(newFiles);
 
-    const newPreviews = files.map((f) => (f.type.startsWith("image/") ? URL.createObjectURL(f) : ""));
+    const newPreviews = files.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+    );
     setPreviewUrls((prev) => [...prev, ...newPreviews]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -93,7 +99,6 @@ export default function ChatMainInput({ setMessages }: Props) {
     wSocket.send(JSON.stringify(messagePayload));
   }
 
-
   /**
    * Handle Message
    */
@@ -123,7 +128,12 @@ export default function ChatMainInput({ setMessages }: Props) {
             continue;
           }
 
-          const inserted = await insertFileToTable(publicUrl, username, receivedName, file);
+          const inserted = await insertFileToTable(
+            publicUrl,
+            username,
+            receivedName,
+            file,
+          );
 
           /**
            * Only add message if DB insert succeeded
@@ -132,7 +142,11 @@ export default function ChatMainInput({ setMessages }: Props) {
            *  */
           if (inserted) {
             try {
-              pubSub.publish("updateChatFiles", { sender: username, receiver: receivedName, file: inserted });
+              pubSub.publish("updateChatFiles", {
+                sender: username,
+                receiver: receivedName,
+                file: inserted,
+              });
             } catch (e) {
               console.warn("Failed to publish chat_files_updated", e);
             }
@@ -204,7 +218,11 @@ export default function ChatMainInput({ setMessages }: Props) {
                 className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
               >
                 {previewUrls[idx] ? (
-                  <img src={previewUrls[idx]} alt={file.name} className="w-12 h-12 object-cover rounded" />
+                  <img
+                    src={previewUrls[idx]}
+                    alt={file.name}
+                    className="w-12 h-12 object-cover rounded"
+                  />
                 ) : (
                   <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
                 )}
@@ -224,7 +242,10 @@ export default function ChatMainInput({ setMessages }: Props) {
                 </button>
               </div>
             ))}
-            <button onClick={clearAllFiles} className="text-xs text-[var(--text-muted)] ml-2">
+            <button
+              onClick={clearAllFiles}
+              className="text-xs text-[var(--text-muted)] ml-2"
+            >
               Clear all
             </button>
           </div>
@@ -262,6 +283,9 @@ export default function ChatMainInput({ setMessages }: Props) {
 
             <textarea
               value={message}
+              onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) =>
+                pasteClipboard(e)
+              }
               onChange={(e) => {
                 setMessage(e.target.value);
                 const value = e.target.value;
@@ -287,9 +311,8 @@ export default function ChatMainInput({ setMessages }: Props) {
                   }
                   sendTypingStatus(false);
                 }
-
               }}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Nhập tin nhắn"
               rows={1}
               className="w-full px-4 py-3 pr-12 border border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-transparent"

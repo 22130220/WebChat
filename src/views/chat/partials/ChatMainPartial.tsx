@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEvent } from "../../../hooks/useEvent";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
-import type { IMessageDetail, RawMessageItem } from "../../../types/interfaces/IMessageDetail";
+import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import { ArrowDown, Download, X, Forward } from "lucide-react";
 import ForwardMessageModal from "./ForwardMessageModal";
 import { useSelector } from "react-redux";
@@ -28,11 +28,16 @@ export default function ChatMainPartial({
     name: string;
   } | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [messageToForward, setMessageToForward] = useState<IMessageDetail | null>(null);
-  const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
-  
+  const [messageToForward, setMessageToForward] =
+    useState<IMessageDetail | null>(null);
+  const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(
+    null,
+  );
+
   // Lấy recipients từ Redux store
-  const recipients = useSelector((state: RootState) => state.recipients.recipients);
+  const recipients = useSelector(
+    (state: RootState) => state.recipients.recipients,
+  );
 
   // Scroll xuống cuối
   const scrollToBottom = () => {
@@ -147,11 +152,10 @@ export default function ChatMainPartial({
   //   });
   // }, [messages]);
 
-
   /**
    * Handle Code by Tai - filtering out typing status
    */
-   const messageDetailList = useMemo(() => {
+  const messageDetailList = useMemo(() => {
     return messages.flatMap((msg) => {
       try {
         const parsed: IMessageDetail[] = JSON.parse(msg.mes);
@@ -170,7 +174,7 @@ export default function ChatMainPartial({
   const typingTimerRef = useRef<number | null>(null);
 
   /**
-   * 
+   *
    * Only handle typing events from the current partner to me
    * Example: partnerName = "alice", username = "bob"
    * When receiving typing status from alice to bob, show typing indicator
@@ -183,7 +187,8 @@ export default function ChatMainPartial({
       if (t.sender === partnerName && t.receiver === username) {
         if (t.isTyping) {
           setIsPartnerTyping(true);
-          if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+          if (typingTimerRef.current)
+            window.clearTimeout(typingTimerRef.current);
           typingTimerRef.current = window.setTimeout(() => {
             setIsPartnerTyping(false);
             typingTimerRef.current = null;
@@ -238,7 +243,9 @@ export default function ChatMainPartial({
                       >
                         {msg.type === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
-                        ) : msg.type === "IMAGE" || (msg.type === "FORWARDED" && msg.originalType === "IMAGE") ? (
+                        ) : msg.type === "IMAGE" ||
+                          (msg.type === "FORWARDED" &&
+                            msg.originalType === "IMAGE") ? (
                           <img
                             src={msg.content}
                             alt="sent"
@@ -246,28 +253,37 @@ export default function ChatMainPartial({
                             onClick={() =>
                               setSelectedImage({
                                 imageUrl: msg.content,
-                                name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`,
+                                name: isme
+                                  ? "Ảnh của bạn"
+                                  : `Ảnh của ${msg.to}`,
                               })
                             }
                           />
-                        ) : msg.type === "FORWARDED" && msg.originalType === "TEXT" ? (
+                        ) : msg.type === "FORWARDED" &&
+                          msg.originalType === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
                         ) : msg.type === "TYPING_STATUS" ? (
                           msg ? (
-                            <div className="text-sm italic text-[var(--text-muted)]">Đang nhập...</div>
+                            <div className="text-sm italic text-[var(--text-muted)]">
+                              Đang nhập...
+                            </div>
                           ) : null
                         ) : null}
                       </div>
                       {/* Forward button */}
-                      {hoveredMessageIndex === index && (msg.type === "TEXT" || msg.type === "IMAGE" || msg.type === "FORWARDED") && recipients.length > 0 && (
-                        <button
-                          onClick={() => setMessageToForward(msg)}
-                          className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] p-1.5 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
-                          title="Chuyển tiếp"
-                        >
-                          <Forward size={14} />
-                        </button>
-                      )}
+                      {hoveredMessageIndex === index &&
+                        (msg.type === "TEXT" ||
+                          msg.type === "IMAGE" ||
+                          msg.type === "FORWARDED") &&
+                        recipients.length > 0 && (
+                          <button
+                            onClick={() => setMessageToForward(msg)}
+                            className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] p-1.5 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+                            title="Chuyển tiếp"
+                          >
+                            <Forward size={14} />
+                          </button>
+                        )}
                     </div>
                   </div>
                   {username === msg.sender && (
