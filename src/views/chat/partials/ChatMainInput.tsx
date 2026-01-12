@@ -13,6 +13,7 @@ import pubSub from "../../../utils/eventBus";
 import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
 import { useClipboard } from "../../../hooks/useClipboard";
 import { hasFile } from "../../../services/clipboardServices";
+import { generateId } from "../../../helpers/StringHelper";
 
 interface Props {
   setMessages: Function;
@@ -22,7 +23,7 @@ export default function ChatMainInput({ setMessages }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const { name, type } = useParams();
   const [message, setMessage] = useState("");
-  const { pasteEvent, items, isLoading, error, removeItem, clearItems } =
+  const { pasteEvent, items, isLoading, removeItem, clearItems } =
     useClipboard();
   const username = localStorage.getItem("USER_NAME") || "";
   const typeEvent = Number(type) === 1 ? "room" : "people";
@@ -121,7 +122,7 @@ export default function ChatMainInput({ setMessages }: Props) {
       messageList.push(messageChat);
     }
 
-    if (selectedFiles.length > 0) {
+    if (selectedFiles.length > 0 || items.length > 0) {
       for (const file of selectedFiles) {
         try {
           const uploadResult = await getImageFromSupabase(file);
@@ -168,6 +169,50 @@ export default function ChatMainInput({ setMessages }: Props) {
           }
         } catch (err) {
           console.error("Upload failed for file", file.name, err);
+        }
+      }
+
+      for (const item of items.filter(hasFile)) {
+        try {
+          const uploadResult = await getImageFromSupabase(item.file);
+          const publicUrl = uploadResult.publicUrl;
+
+          if (!publicUrl) {
+            console.error("No public URL returned for", item.fileName);
+            continue;
+          }
+
+          const inserted = await insertFileToTable(
+            publicUrl,
+            username,
+            receivedName,
+            item.file,
+          );
+
+          if (inserted) {
+            try {
+              pubSub.publish("updateChatFiles", {
+                sender: username,
+                receiver: receivedName,
+                file: inserted,
+              });
+            } catch (e) {
+              console.warn("Failed to publish chat_files_updated", e);
+            }
+
+            const imageChat: IMessageDetail = {
+              type: "IMAGE",
+              content: publicUrl,
+              sender: username,
+              to: `${name}`,
+              timestamp: new Date().toISOString(),
+            };
+            messageList.push(imageChat);
+          } else {
+            console.error("DB insert failed for", item.fileName);
+          }
+        } catch (err) {
+          console.error("Upload failed for file", item.fileName, err);
         }
       }
     }
@@ -218,7 +263,7 @@ export default function ChatMainInput({ setMessages }: Props) {
           <div className="mb-3 flex items-center gap-2 overflow-x-auto">
             {selectedFiles.map((file, idx) => (
               <div
-                key={`${file.name}-${idx}`}
+                key={`${file.name}-${generateId()}`}
                 className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
               >
                 {previewUrls[idx] ? (
@@ -249,7 +294,7 @@ export default function ChatMainInput({ setMessages }: Props) {
 
             {items.filter(hasFile).map((item, idx) => (
               <div
-                key={`${item.fileName}-${idx}`}
+                key={`${item.fileName}-${item.lastModified}`}
                 className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
               >
                 {item.type === "image" ? (

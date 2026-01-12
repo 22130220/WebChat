@@ -1,13 +1,13 @@
 import { useState } from "react";
 import type {
   IClipboardItem,
-  IClipboardPayload,
+  ImageClipboardItem,
+  FileClipboardItem,
 } from "../types/interfaces/IClipboard";
 import { processFiles } from "../services/clipboardServices";
 
 interface ClipboardState {
   items: IClipboardItem[];
-  error: IClipboardPayload[];
   isLoading: boolean;
 }
 
@@ -17,41 +17,58 @@ interface UseClipboardReturn extends ClipboardState {
   clearItems: () => void;
 }
 
+/**
+ * Check if file already exists in clipboard items
+ * Compare by fileName AND lastModified for accuracy
+ */
+function isDuplicateFile(file: File, existingItems: IClipboardItem[]): boolean {
+  return existingItems.some((item) => {
+    if (item.type !== "image" && item.type !== "file") return false;
+    const fileItem = item as ImageClipboardItem | FileClipboardItem;
+    return (
+      fileItem.fileName === file.name &&
+      fileItem.lastModified === file.lastModified
+    );
+  });
+}
+
 export function useClipboard(): UseClipboardReturn {
   const [clipboard, setClipboard] = useState<ClipboardState>({
     items: [],
-    error: [],
     isLoading: false,
   });
 
   function pasteEvent<T extends HTMLElement>(event: React.ClipboardEvent<T>) {
+    const paste = event.clipboardData;
+    if (!paste) return;
+
+    const files = paste.files;
+    // TODO: If message is too long, truncate and notify user
+    if (files.length === 0) {
+      return;
+    }
+
     event?.preventDefault();
 
     // Set loading state
-    setClipboard((prev) => ({ ...prev, isLoading: true, error: [] }));
+    setClipboard((prev) => ({ ...prev, isLoading: true }));
 
-    const paste = event.clipboardData;
     if (!paste) {
       console.log("No data on paste");
       setClipboard((prev) => ({ ...prev, isLoading: false }));
       return;
     }
 
-    const files = paste.files;
     if (files.length === 0) {
       console.log("No files on paste");
       setClipboard((prev) => ({ ...prev, isLoading: false }));
       return;
     }
 
-    // Convert FileList to Array and filter duplicates
+    // Convert FileList to Array and filter duplicates (by name + lastModified)
     const filesArray = Array.from(files);
-    const existingFileNames = new Set(
-      clipboard.items.map((item) => ("fileName" in item ? item.fileName : "")),
-    );
-
     const newFiles = filesArray.filter(
-      (file) => !existingFileNames.has(file.name),
+      (file) => !isDuplicateFile(file, clipboard.items),
     );
 
     if (newFiles.length === 0) {
@@ -100,7 +117,6 @@ export function useClipboard(): UseClipboardReturn {
 
   return {
     items: clipboard.items,
-    error: clipboard.error,
     isLoading: clipboard.isLoading,
     pasteEvent,
     removeItem,

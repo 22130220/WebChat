@@ -24,6 +24,7 @@ export interface FileClipboardItem extends IClipboardItemBase {
   fileSize: number;
   mimeType: string;
   extension: string;
+  lastModified: number;
 }
 
 export interface ImageClipboardItem extends IClipboardItemBase {
@@ -33,6 +34,7 @@ export interface ImageClipboardItem extends IClipboardItemBase {
   fileName: string;
   fileSize: number;
   mimeType: string;
+  lastModified: number;
   dimensions?: {
     width: number;
     height: number;

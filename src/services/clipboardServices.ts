@@ -1,5 +1,7 @@
 import { CLIPBOARD_CONFIG } from "../common/constants";
 import { generateId } from "../helpers/StringHelper";
+import { showError } from "../stores/notificationSlice";
+import { store } from "../stores/store";
 import type { FileClipboardItem, IClipboardItem, ImageClipboardItem } from "../types/interfaces/IClipboard";
 
 /**
@@ -36,8 +38,9 @@ function imageProcessing(file: File): ImageClipboardItem {
     fileName: file.name || `image-${Date.now()}.png`,
     fileSize: file.size,
     mimeType: file.type,
+    lastModified: file.lastModified,
     createdAt: Date.now(),
-    dimensions: undefined, // Could be set later if needed
+    dimensions: undefined,
   };
 }
 
@@ -50,6 +53,7 @@ function fileProcessing(file: File): FileClipboardItem {
     fileSize: file.size,
     mimeType: file.type,
     extension: file.name.split('.').pop() || '',
+    lastModified: file.lastModified,
     createdAt: Date.now(),
   };
 }
@@ -61,11 +65,13 @@ function validateFile(file: File): boolean {
   const isAllowedType = allAllowedTypes.includes(file.type);
 
   if (!isAllowedType) {
+    store.dispatch(showError(`${file.type} không được hỗ trợ`));
     console.warn(`File type "${file.type}" không được hỗ trợ`);
     return false;
   }
 
   if (file.size > maxFileSize) {
+    store.dispatch(showError(`File "${file.name}" vượt quá ${maxFileSize / 1024 / 1024}MB`));
     console.warn(`File "${file.name}" vượt quá ${maxFileSize / 1024 / 1024}MB`);
     return false;
   }
