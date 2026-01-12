@@ -1,13 +1,19 @@
 import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
 import { FileText, SmilePlus, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import type { IChatMessage } from "../../../types/interfaces/IChatMessage";
-import { getImageFromSupabase, insertFileToTable } from "../../../services/supabaseService";
+import {
+  getImageFromSupabase,
+  insertFileToTable,
+} from "../../../services/supabaseService";
 import pubSub from "../../../utils/eventBus";
 import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
+import { useClipboard } from "../../../hooks/useClipboard";
+import { hasFile } from "../../../services/clipboardServices";
+import { generateId } from "../../../helpers/StringHelper";
 
 interface Props {
   setMessages: Function;
@@ -17,6 +23,8 @@ export default function ChatMainInput({ setMessages }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const { name, type } = useParams();
   const [message, setMessage] = useState("");
+  const { pasteEvent, items, isLoading, removeItem, clearItems } =
+    useClipboard();
   const username = localStorage.getItem("USER_NAME") || "";
   const typeEvent = Number(type) === 1 ? "room" : "people";
 
@@ -34,10 +42,10 @@ export default function ChatMainInput({ setMessages }: Props) {
   };
 
   /** Handle File Change (support multiple)
-   * files : currently selected files 
+   * files : currently selected files
    * newFiles : newly selected files
-   * 
-  */
+   *
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length === 0) return;
@@ -45,7 +53,9 @@ export default function ChatMainInput({ setMessages }: Props) {
     const newFiles = [...selectedFiles, ...files];
     setSelectedFiles(newFiles);
 
-    const newPreviews = files.map((f) => (f.type.startsWith("image/") ? URL.createObjectURL(f) : ""));
+    const newPreviews = files.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+    );
     setPreviewUrls((prev) => [...prev, ...newPreviews]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -54,6 +64,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     previewUrls.forEach((u) => u && URL.revokeObjectURL(u));
     setSelectedFiles([]);
     setPreviewUrls([]);
+    clearItems();
   };
 
   const removeFileAt = (index: number) => {
@@ -93,7 +104,6 @@ export default function ChatMainInput({ setMessages }: Props) {
     wSocket.send(JSON.stringify(messagePayload));
   }
 
-
   /**
    * Handle Message
    */
@@ -112,7 +122,7 @@ export default function ChatMainInput({ setMessages }: Props) {
       messageList.push(messageChat);
     }
 
-    if (selectedFiles.length > 0) {
+    if (selectedFiles.length > 0 || items.length > 0) {
       for (const file of selectedFiles) {
         try {
           const uploadResult = await getImageFromSupabase(file);
@@ -123,7 +133,12 @@ export default function ChatMainInput({ setMessages }: Props) {
             continue;
           }
 
-          const inserted = await insertFileToTable(publicUrl, username, receivedName, file);
+          const inserted = await insertFileToTable(
+            publicUrl,
+            username,
+            receivedName,
+            file,
+          );
 
           /**
            * Only add message if DB insert succeeded
@@ -132,7 +147,11 @@ export default function ChatMainInput({ setMessages }: Props) {
            *  */
           if (inserted) {
             try {
-              pubSub.publish("updateChatFiles", { sender: username, receiver: receivedName, file: inserted });
+              pubSub.publish("updateChatFiles", {
+                sender: username,
+                receiver: receivedName,
+                file: inserted,
+              });
             } catch (e) {
               console.warn("Failed to publish chat_files_updated", e);
             }
@@ -150,6 +169,50 @@ export default function ChatMainInput({ setMessages }: Props) {
           }
         } catch (err) {
           console.error("Upload failed for file", file.name, err);
+        }
+      }
+
+      for (const item of items.filter(hasFile)) {
+        try {
+          const uploadResult = await getImageFromSupabase(item.file);
+          const publicUrl = uploadResult.publicUrl;
+
+          if (!publicUrl) {
+            console.error("No public URL returned for", item.fileName);
+            continue;
+          }
+
+          const inserted = await insertFileToTable(
+            publicUrl,
+            username,
+            receivedName,
+            item.file,
+          );
+
+          if (inserted) {
+            try {
+              pubSub.publish("updateChatFiles", {
+                sender: username,
+                receiver: receivedName,
+                file: inserted,
+              });
+            } catch (e) {
+              console.warn("Failed to publish chat_files_updated", e);
+            }
+
+            const imageChat: IMessageDetail = {
+              type: "IMAGE",
+              content: publicUrl,
+              sender: username,
+              to: `${name}`,
+              timestamp: new Date().toISOString(),
+            };
+            messageList.push(imageChat);
+          } else {
+            console.error("DB insert failed for", item.fileName);
+          }
+        } catch (err) {
+          console.error("Upload failed for file", item.fileName, err);
         }
       }
     }
@@ -196,15 +259,19 @@ export default function ChatMainInput({ setMessages }: Props) {
     <>
       <div className="px-6 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]">
         {/* Preview File area */}
-        {selectedFiles.length > 0 && (
+        {(selectedFiles.length > 0 || items.length > 0) && (
           <div className="mb-3 flex items-center gap-2 overflow-x-auto">
             {selectedFiles.map((file, idx) => (
               <div
-                key={`${file.name}-${idx}`}
+                key={`${file.name}-${generateId()}`}
                 className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
               >
                 {previewUrls[idx] ? (
-                  <img src={previewUrls[idx]} alt={file.name} className="w-12 h-12 object-cover rounded" />
+                  <img
+                    src={previewUrls[idx]}
+                    alt={file.name}
+                    className="w-12 h-12 object-cover rounded"
+                  />
                 ) : (
                   <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
                 )}
@@ -224,7 +291,41 @@ export default function ChatMainInput({ setMessages }: Props) {
                 </button>
               </div>
             ))}
-            <button onClick={clearAllFiles} className="text-xs text-[var(--text-muted)] ml-2">
+
+            {items.filter(hasFile).map((item, idx) => (
+              <div
+                key={`${item.fileName}-${item.lastModified}`}
+                className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
+              >
+                {item.type === "image" ? (
+                  <img
+                    src={item.previewUrl}
+                    alt={item.fileName}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                ) : (
+                  <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
+                )}
+                <div className="flex flex-col pr-6">
+                  <span className="text-xs font-medium truncate max-w-[150px] text-[var(--text-primary)]">
+                    {item.fileName}{" "}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    {(item.fileSize / 1024).toFixed(1)} KB
+                  </span>
+                </div>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={clearAllFiles}
+              className="text-xs text-[var(--text-muted)] ml-2"
+            >
               Clear all
             </button>
           </div>
@@ -262,6 +363,9 @@ export default function ChatMainInput({ setMessages }: Props) {
 
             <textarea
               value={message}
+              onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) =>
+                pasteEvent(e)
+              }
               onChange={(e) => {
                 setMessage(e.target.value);
                 const value = e.target.value;
@@ -287,9 +391,8 @@ export default function ChatMainInput({ setMessages }: Props) {
                   }
                   sendTypingStatus(false);
                 }
-
               }}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Nhập tin nhắn"
               rows={1}
               className="w-full px-4 py-3 pr-12 border border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-transparent"
