@@ -9,18 +9,18 @@ export const CLIPBOARD_CONFIG = {
   maxItems: 10,
   maxFileSize: 10 * 1024 * 1024,
   maxTextLength: 50000,
+  allowedImageTypes: [
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp'
+  ],
 
   allowedFileTypes: [
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
-
-    // Images
-    'image/png',
-    'image/jpeg',
-    'image/gif',
-    'image/webp'
   ],
 
   thumbnailSize: {

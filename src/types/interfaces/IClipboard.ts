@@ -1,3 +1,14 @@
+export interface IClipboardPayload {
+  type: 'add' | 'remove' | 'clear';
+  message?: string;
+}
+
+export interface ICLipboardProcess {
+  files: FileList;
+  types: readonly string[];
+  fileProcessing: File[];
+}
+
 type ContentType = 'image' | 'text' | 'html' | 'file';
 
 interface IClipboardItemBase {

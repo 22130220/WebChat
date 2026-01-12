@@ -1,6 +1,6 @@
 import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
 import { FileText, SmilePlus, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
@@ -11,7 +11,8 @@ import {
 } from "../../../services/supabaseService";
 import pubSub from "../../../utils/eventBus";
 import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
-import { pasteClipboard } from "../../../services/clipboardServices";
+import { useClipboard } from "../../../hooks/useClipboard";
+import { hasFile } from "../../../services/clipboardServices";
 
 interface Props {
   setMessages: Function;
@@ -21,6 +22,8 @@ export default function ChatMainInput({ setMessages }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const { name, type } = useParams();
   const [message, setMessage] = useState("");
+  const { pasteEvent, items, isLoading, error, removeItem, clearItems } =
+    useClipboard();
   const username = localStorage.getItem("USER_NAME") || "";
   const typeEvent = Number(type) === 1 ? "room" : "people";
 
@@ -60,6 +63,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     previewUrls.forEach((u) => u && URL.revokeObjectURL(u));
     setSelectedFiles([]);
     setPreviewUrls([]);
+    clearItems();
   };
 
   const removeFileAt = (index: number) => {
@@ -210,7 +214,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     <>
       <div className="px-6 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]">
         {/* Preview File area */}
-        {selectedFiles.length > 0 && (
+        {(selectedFiles.length > 0 || items.length > 0) && (
           <div className="mb-3 flex items-center gap-2 overflow-x-auto">
             {selectedFiles.map((file, idx) => (
               <div
@@ -236,6 +240,37 @@ export default function ChatMainInput({ setMessages }: Props) {
                 </div>
                 <button
                   onClick={() => removeFileAt(idx)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+
+            {items.filter(hasFile).map((item, idx) => (
+              <div
+                key={`${item.fileName}-${idx}`}
+                className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"
+              >
+                {item.type === "image" ? (
+                  <img
+                    src={item.previewUrl}
+                    alt={item.fileName}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                ) : (
+                  <FileText className="w-8 h-8 text-[var(--accent-primary)]" />
+                )}
+                <div className="flex flex-col pr-6">
+                  <span className="text-xs font-medium truncate max-w-[150px] text-[var(--text-primary)]">
+                    {item.fileName}{" "}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    {(item.fileSize / 1024).toFixed(1)} KB
+                  </span>
+                </div>
+                <button
+                  onClick={() => removeItem(item.id)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
                 >
                   <X className="w-3 h-3" />
@@ -284,7 +319,7 @@ export default function ChatMainInput({ setMessages }: Props) {
             <textarea
               value={message}
               onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) =>
-                pasteClipboard(e)
+                pasteEvent(e)
               }
               onChange={(e) => {
                 setMessage(e.target.value);
