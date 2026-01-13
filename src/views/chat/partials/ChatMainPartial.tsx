@@ -7,6 +7,8 @@ import { ArrowDown, Download, X, Forward } from "lucide-react";
 import ForwardMessageModal from "./ForwardMessageModal";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../stores/store";
+import { extractUrl } from "../../../utils/extractUrl";
+import LinkPreview from "../../../components/LinkPreview";
 
 interface IChatMainProps {
   messages: Array<IChatMessage>;
@@ -220,6 +222,11 @@ export default function ChatMainPartial({
             .reverse()
             .map((msg, index) => {
               const isme = username === msg.sender;
+
+              // Tai
+              const detectUrl = extractUrl(msg.content || "");
+              // =========================
+
               return (
                 <div
                   key={index}
@@ -235,11 +242,10 @@ export default function ChatMainPartial({
                   <div className="flex flex-col max-w-md">
                     <div className="relative">
                       <div
-                        className={`px-4 py-2 rounded-2xl ${
-                          username === msg.sender
-                            ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
-                            : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
-                        }`}
+                        className={`px-4 py-2 rounded-2xl ${username === msg.sender
+                          ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
+                          : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
+                          }`}
                       >
                         {msg.type === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
@@ -262,14 +268,14 @@ export default function ChatMainPartial({
                         ) : msg.type === "FORWARDED" &&
                           msg.originalType === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
-                        ) : msg.type === "TYPING_STATUS" ? (
-                          msg ? (
-                            <div className="text-sm italic text-[var(--text-muted)]">
-                              Đang nhập...
-                            </div>
-                          ) : null
                         ) : null}
                       </div>
+                      {detectUrl &&
+                        <div className="mt-2 w-full">
+                          <LinkPreview url={detectUrl} isMe={isme} />
+                        </div>
+                      }
+
                       {/* Forward button */}
                       {hoveredMessageIndex === index &&
                         (msg.type === "TEXT" ||
@@ -291,6 +297,7 @@ export default function ChatMainPartial({
                       👤
                     </div>
                   )}
+
                 </div>
               );
             })}
