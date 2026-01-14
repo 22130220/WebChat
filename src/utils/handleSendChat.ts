@@ -1,3 +1,6 @@
+import { showMessageNotification } from "../services/messageNotificationService";
+import reactSvg from "../assets/react.svg";
+
 export const handleSendChat = (data: any, pubSub: any) => {
     const channel = getPublishChannel(data);
     if (!channel) {
@@ -36,8 +39,10 @@ export const handleSendChat = (data: any, pubSub: any) => {
                 cloned.data.mes = JSON.stringify(otherItems);
                 if (cloned.data.type === 1) {
                     pubSub.publish(`receive_chat:${cloned.data.to}`, cloned);
+                    callNotification(cloned, otherItems);
                 } else if (cloned.data.type === 0) {
                     pubSub.publish(`receive_chat:${cloned.data.name}`, cloned);
+                    callNotification(cloned, otherItems);
                 }
             }
         } else {
@@ -46,6 +51,7 @@ export const handleSendChat = (data: any, pubSub: any) => {
             } else if (data.data.type === 0) {
                 pubSub.publish(`receive_chat:${data.data.name}`, data);
             }
+
         }
     } catch (e) {
         console.warn("Failed to parse SEND_CHAT message", e);
@@ -61,4 +67,33 @@ const getPublishChannel = (data: any) => {
     const { type, to, name } = data.data || {};
     if (type === 1) return `receive_chat:${to}`;
     if (type === 0) return `receive_chat:${name}`;
+}
+
+function callNotification(data: any, otherItems: any) {
+    if (data.data.mes == null) return;
+    for (const item of otherItems) {
+        if (item.type === "TYPING_STATUS") continue;
+        if (item.type === "IMAGE") {
+            showMessageNotification(
+                `Tin nhắn mới từ ${data.data.to}`,
+                "Hình ảnh",
+                data.data.name,
+                {
+                    icon: reactSvg,
+                    navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
+                }
+            );
+        }
+        else {
+            showMessageNotification(
+                `Tin nhắn mới từ ${data.data.to}`,
+                item.content,
+                data.data.name,
+                {
+                    icon: reactSvg,
+                    navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
+                }
+            );
+        }
+    }
 }

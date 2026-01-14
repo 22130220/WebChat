@@ -1,6 +1,6 @@
 import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
 import { FileText, SmilePlus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";

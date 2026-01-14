@@ -82,4 +82,3 @@ const ChatMain: React.FC = () => {
 };
 
 export default ChatMain;
-
