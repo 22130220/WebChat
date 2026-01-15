@@ -1,11 +1,12 @@
 import DirectoryHeader from "../partials/DirectoryHeader";
 import TeamMemberItem from "../partials/TeamMemberItem";
 import FileItem from "../partials/FileItem";
-import { teamMembers } from "../../../data/TeamMemberMock";
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useEvent } from "../../../hooks/useEvent";
 import { supabaseClient } from "../../../services/supabaseService";
+import { useSelector } from "react-redux";
+import { selectGroupMembers } from "../../../stores/groupMembersSlice";
 
 const ChatDirectory = () => {
   const params = useParams();
@@ -13,8 +14,13 @@ const ChatDirectory = () => {
   const [allFiles, setAllFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const receiver = params.name;
+  const type = params.type;
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"FILES" | "MEDIA">("MEDIA");
+  
+  // Lấy danh sách thành viên nhóm từ Redux store
+  const groupMembers = useSelector(selectGroupMembers);
+  const isGroup = Number(type) === 1;
 
   const fetchFiles = async (limit?: number) => {
     const sender = localStorage.getItem("USER_NAME") || "";
@@ -92,21 +98,35 @@ const ChatDirectory = () => {
     <div className="w-80 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] h-screen overflow-y-auto">
       <DirectoryHeader />
 
-      {/* Team Members */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-sm text-[var(--text-primary)]">Thành viên</h3>
-          <span className="text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
-            {teamMembers.length}
-          </span>
-        </div>
+      {/* Team Members - Chỉ hiển thị khi là nhóm (type = 1) */}
+      {isGroup && (
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-sm text-[var(--text-primary)]">Thành viên</h3>
+            <span className="text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
+              {groupMembers.length}
+            </span>
+          </div>
 
-        <div className="space-y-3">
-          {teamMembers.map((m) => (
-            <TeamMemberItem key={m.id} member={m} />
-          ))}
+          <div className="space-y-3">
+            {groupMembers.length > 0 ? (
+              groupMembers.map((member) => (
+                <TeamMemberItem 
+                  key={member.id} 
+                  member={{
+                    id: member.id,
+                    name: member.name,
+                    role: "",
+                    avatar: "👨‍💼"
+                  }} 
+                />
+              ))
+            ) : (
+              <p className="text-xs text-[var(--text-muted)]">Đang tải thành viên...</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Files */}
       <div className="p-4 border-t border-[var(--border-primary)]">

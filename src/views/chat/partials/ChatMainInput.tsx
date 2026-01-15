@@ -267,19 +267,19 @@ export default function ChatMainInput({ setMessages }: Props) {
     console.log(messagePayload);
     wSocket.send(JSON.stringify(messagePayload));
 
-    if (Number(type) === 0) {
-      setMessages((prev) => [
-        {
-          id: prev.length + 1,
-          to: `${name}`,
-          mes: JSON.stringify(messageList),
-          name: `${username}`,
-          type: Number(type),
-          createAt: new Date().toISOString(),
-        } as IChatMessage,
-        ...prev,
-      ]);
-    }
+    // Cập nhật tin nhắn lên giao diện ngay lập tức cho cả chat cá nhân (type = 0) và nhóm (type = 1)
+    setMessages((prev: IChatMessage[]) => [
+      {
+        id: prev.length + 1,
+        to: `${name}`,
+        mes: JSON.stringify(messageList),
+        name: `${username}`,
+        type: Number(type),
+        createAt: new Date().toISOString(),
+      } as IChatMessage,
+      ...prev,
+    ]);
+    
     setMessage("");
     clearAllFiles();
   };
