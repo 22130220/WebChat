@@ -105,6 +105,38 @@ export default function ChatMainInput({ setMessages }: Props) {
   }
 
   /**
+   * 
+   */
+  function getMessageTypeFromFileType(file: File): string {
+    const extension = file.name.split('.').pop()?.toLowerCase() || "";
+    const type = file.type.toLowerCase();
+
+    if (extension === "pdf" || type === "application/pdf") {
+      return "PDF";
+    }
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension) || type.startsWith("image/")) {
+      return "IMAGE";
+    }
+
+    if (['doc', 'docx'].includes(extension) ||
+      type === "application/msword" ||
+      type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      return "DOCUMENT";
+    }
+
+    if (['mp4', 'mov', 'avi', 'mkv'].includes(extension) || type.startsWith("video/")) {
+      return "VIDEO";
+    }
+
+    if (['mp3', 'wav', 'ogg'].includes(extension) || type.startsWith("audio/")) {
+      return "AUDIO";
+    }
+
+    return "FILE";
+  }
+
+  /**
    * Handle Message
    */
   const handleSend = async () => {
@@ -156,8 +188,10 @@ export default function ChatMainInput({ setMessages }: Props) {
               console.warn("Failed to publish chat_files_updated", e);
             }
 
+            const msgType = getMessageTypeFromFileType(file);
+
             const imageChat: IMessageDetail = {
-              type: "IMAGE",
+              type: msgType,
               content: publicUrl,
               sender: username,
               to: `${name}`,
@@ -200,8 +234,10 @@ export default function ChatMainInput({ setMessages }: Props) {
               console.warn("Failed to publish chat_files_updated", e);
             }
 
+            const msgType = getMessageTypeFromFileType(item.file);
+
             const imageChat: IMessageDetail = {
-              type: "IMAGE",
+              type: msgType,
               content: publicUrl,
               sender: username,
               to: `${name}`,

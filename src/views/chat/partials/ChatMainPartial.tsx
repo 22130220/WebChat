@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../stores/store";
 import { extractUrl } from "../../../utils/extractUrl";
 import LinkPreview from "../../../components/LinkPreview";
+import MessageContent from "./MessageContent";
 
 interface IChatMainProps {
   messages: Array<IChatMessage>;
@@ -224,7 +225,6 @@ export default function ChatMainPartial({
               const isme = username === msg.sender;
 
               // Tai
-              const detectUrl = extractUrl(msg.content || "");
               // =========================
 
               return (
@@ -247,7 +247,7 @@ export default function ChatMainPartial({
                           : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
                           }`}
                       >
-                        {msg.type === "TEXT" ? (
+                        {/* {msg.type === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
                         ) : msg.type === "IMAGE" ||
                           (msg.type === "FORWARDED" &&
@@ -268,16 +268,12 @@ export default function ChatMainPartial({
                         ) : msg.type === "FORWARDED" &&
                           msg.originalType === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
-                        ) : null}
+                        ) : null} */}
+                        <MessageContent msg={msg} isme={isme} onImageClick={(url) => setSelectedImage({ imageUrl: url, name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}` })} />
                       </div>
-                      {detectUrl &&
-                        <div className="mt-2 w-full">
-                          <LinkPreview url={detectUrl} isMe={isme} />
-                        </div>
-                      }
-
+                     
                       {/* Forward button */}
-                      {hoveredMessageIndex === index &&
+                      {/* {hoveredMessageIndex === index &&
                         (msg.type === "TEXT" ||
                           msg.type === "IMAGE" ||
                           msg.type === "FORWARDED") &&
@@ -289,7 +285,19 @@ export default function ChatMainPartial({
                           >
                             <Forward size={14} />
                           </button>
+                        )} */}
+
+                      {hoveredMessageIndex === index &&
+                        recipients.length > 0 && (
+                          <button
+                            onClick={() => setMessageToForward(msg)}
+                            className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] p-1.5 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+                            title="Chuyển tiếp"
+                          >
+                            <Forward size={14} />
+                          </button>
                         )}
+
                     </div>
                   </div>
                   {username === msg.sender && (
