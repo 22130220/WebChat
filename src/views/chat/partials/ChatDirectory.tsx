@@ -7,6 +7,8 @@ import { useEvent } from "../../../hooks/useEvent";
 import { supabaseClient } from "../../../services/supabaseService";
 import { useSelector } from "react-redux";
 import { selectGroupMembers } from "../../../stores/groupMembersSlice";
+import { getUserAvatars } from "../../../services/firebaseProfileService";
+import UserProfileModal from "../../profile/UserProfileModal";
 
 const ChatDirectory = () => {
   const params = useParams();
@@ -21,6 +23,12 @@ const ChatDirectory = () => {
   // Lấy danh sách thành viên nhóm từ Redux store
   const groupMembers = useSelector(selectGroupMembers);
   const isGroup = Number(type) === 1;
+  
+  // State để lưu avatars của các thành viên
+  const [memberAvatars, setMemberAvatars] = useState<Map<string, string>>(new Map());
+  
+  // State để quản lý profile modal
+  const [selectedMemberUsername, setSelectedMemberUsername] = useState<string | null>(null);
 
   const fetchFiles = async (limit?: number) => {
     const sender = localStorage.getItem("USER_NAME") || "";
@@ -63,6 +71,16 @@ const ChatDirectory = () => {
     }
   }, [receiver]);
 
+  // Fetch avatars khi groupMembers thay đổi
+  useEffect(() => {
+    if (groupMembers.length > 0) {
+      const usernames = groupMembers.map(member => member.name);
+      getUserAvatars(usernames).then(avatarMap => {
+        setMemberAvatars(avatarMap);
+      });
+    }
+  }, [groupMembers]);
+
   const handleShowAll = () => {
     setLoading(true);
     setShowModal(true);
@@ -93,6 +111,12 @@ const ChatDirectory = () => {
     return { media, nonMedia };
   }, [allFiles]);
 
+  // Nếu chưa chọn chat với ai thì không hiển thị ChatDirectory
+  if (!receiver || !type) {
+    return null;
+  }
+
+
 
   return (
     <div className="w-80 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] h-screen overflow-y-auto">
@@ -117,8 +141,9 @@ const ChatDirectory = () => {
                     id: member.id,
                     name: member.name,
                     role: "",
-                    avatar: "👨‍💼"
-                  }} 
+                    avatar: memberAvatars.get(member.name) || "👨‍💼"
+                  }}
+                  onClick={() => setSelectedMemberUsername(member.name)}
                 />
               ))
             ) : (
@@ -198,6 +223,14 @@ const ChatDirectory = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile Modal */}
+      {selectedMemberUsername && (
+        <UserProfileModal
+          username={selectedMemberUsername}
+          onClose={() => setSelectedMemberUsername(null)}
+        />
       )}
     </div>
   )

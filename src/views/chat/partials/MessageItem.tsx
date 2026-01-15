@@ -7,6 +7,8 @@ interface Props {
 }
 
 const MessageItem = ({ message, activeMessageName }: Props) => {
+  const isAvatarImage = message.avatar && message.avatar.startsWith('data:image/');
+
   return (
     <NavLink to={`/chat/${message.name}/type/${message.type}`}>
       <div
@@ -15,8 +17,16 @@ const MessageItem = ({ message, activeMessageName }: Props) => {
         }`}
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl flex-shrink-0">
-            {message.avatar}
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+            {isAvatarImage ? (
+              <img 
+                src={message.avatar} 
+                alt={message.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{message.avatar}</span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">

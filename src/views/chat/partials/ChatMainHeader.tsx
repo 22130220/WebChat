@@ -4,15 +4,20 @@ import { useSelector } from "react-redux";
 import wSocket from "../../../utils/wSocket";
 import { selectIsOnline } from "../../../stores/onlineStatusSlice";
 import UserProfileModal from "../../profile/UserProfileModal";
+import { getUserProfile } from "../../../services/firebaseProfileService";
 
 export default function ChatMainHeader() {
   const { name, type } = useParams();
   const isOnline = useSelector(selectIsOnline);
   const isPerson = Number(type) === 0;
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [partnerAvatar, setPartnerAvatar] = useState<string>("");
 
   useEffect(() => {
-    // Chỉ check online status khi mở chat với người (type === 0)
+    // Reset avatar khi chuyển chat
+    setPartnerAvatar("");
+    
+    // Chỉ check online status và fetch avatar khi mở chat với người (type === 0)
     if (name && isPerson) {
       const checkOnlinePayload = {
         action: "onchat",
@@ -24,6 +29,17 @@ export default function ChatMainHeader() {
         }
       };
       wSocket.send(JSON.stringify(checkOnlinePayload));
+      
+      // Fetch avatar của người đang chat
+      getUserProfile(name).then(profile => {
+        if (profile?.avatar) {
+          setPartnerAvatar(profile.avatar);
+        } else {
+          setPartnerAvatar(""); // Đảm bảo reset nếu không có avatar
+        }
+      }).catch(() => {
+        setPartnerAvatar(""); // Reset nếu có lỗi
+      });
     }
   }, [name, isPerson]);
 
@@ -31,12 +47,24 @@ export default function ChatMainHeader() {
     setShowProfileModal(true);
   };
 
+  const isAvatarImage = isPerson && partnerAvatar && partnerAvatar.startsWith('data:image/');
+
   return (
     <>
       <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-xl">
-            👨‍💻
+          <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-xl overflow-hidden">
+            {!isPerson ? (
+              <span>👥</span>
+            ) : isAvatarImage ? (
+              <img 
+                src={partnerAvatar} 
+                alt={name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>👨‍💻</span>
+            )}
           </div>
           <div>
             <h2 className="font-semibold text-[var(--text-primary)]">

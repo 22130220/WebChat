@@ -10,6 +10,7 @@ import type { RootState } from "../../../stores/store";
 import { extractUrl } from "../../../utils/extractUrl";
 import LinkPreview from "../../../components/LinkPreview";
 import MessageContent from "./MessageContent";
+import { getUserAvatars } from "../../../services/firebaseProfileService";
 
 interface IChatMainProps {
   messages: Array<IChatMessage>;
@@ -21,6 +22,8 @@ export default function ChatMainPartial({
   setPageUp,
 }: IChatMainProps) {
   const username = localStorage.getItem("USER_NAME") || "";
+  const { name: partnerName } = useParams();
+  const [avatarMap, setAvatarMap] = useState<Map<string, string>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false); // Flag để bỏ qua lần đầu tiên
@@ -80,6 +83,29 @@ export default function ChatMainPartial({
       }, 300);
     }
   }, [messages]);
+
+  // Fetch avatars của tất cả users trong messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const usernames = new Set<string>();
+      usernames.add(username); // Thêm user hiện tại
+      if (partnerName) usernames.add(partnerName); // Thêm người chat
+      
+      // Lấy tất cả senders từ messages
+      messages.forEach(msg => {
+        try {
+          const parsed: IMessageDetail[] = JSON.parse(msg.mes);
+          parsed.forEach(detail => {
+            if (detail.sender) usernames.add(detail.sender);
+          });
+        } catch {}
+      });
+
+      getUserAvatars(Array.from(usernames)).then(map => {
+        setAvatarMap(map);
+      });
+    }
+  }, [messages, username, partnerName]);
 
   // Auto scroll khi có tin nhắn mới (nếu đang ở gần cuối hoặc tôi là người gửi)
   useEffect(() => {
@@ -172,7 +198,6 @@ export default function ChatMainPartial({
     });
   }, [messages]);
 
-  const { name: partnerName } = useParams();
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const typingTimerRef = useRef<number | null>(null);
 
@@ -235,8 +260,16 @@ export default function ChatMainPartial({
                   onMouseLeave={() => setHoveredMessageIndex(null)}
                 >
                   {username !== msg.sender && (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0">
-                      👨‍💻
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0 overflow-hidden">
+                      {avatarMap.has(msg.sender) && avatarMap.get(msg.sender)?.startsWith('data:image/') ? (
+                        <img 
+                          src={avatarMap.get(msg.sender)} 
+                          alt={msg.sender} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>👨‍💻</span>
+                      )}
                     </div>
                   )}
                   <div className="flex flex-col max-w-md">
@@ -301,8 +334,16 @@ export default function ChatMainPartial({
                     </div>
                   </div>
                   {username === msg.sender && (
-                    <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0">
-                      👤
+                    <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0 overflow-hidden">
+                      {avatarMap.has(username) && avatarMap.get(username)?.startsWith('data:image/') ? (
+                        <img 
+                          src={avatarMap.get(username)} 
+                          alt={username} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>👤</span>
+                      )}
                     </div>
                   )}
 

@@ -14,6 +14,7 @@ import {
   getUserContacts,
   mergeUserLists,
 } from "../../../services/firebaseUserService";
+import { getUserAvatars } from "../../../services/firebaseProfileService";
 import { useDispatch } from "react-redux";
 import { setRecipients } from "../../../stores/recipientsSlice";
 
@@ -86,7 +87,28 @@ const ChatSidebar = () => {
           merged: mergedUsers.length,
         });
         
-        setMessages(mergedUsers);
+        // Fetch avatars cho tất cả users (chỉ người dùng, không phải nhóm)
+        const individualUsers = mergedUsers.filter(user => user.type === 0);
+        if (individualUsers.length > 0) {
+          const usernames = individualUsers.map(user => user.name);
+          const avatarMap = await getUserAvatars(usernames);
+          
+          // Cập nhật avatar thực vào messages
+          const updatedUsers = mergedUsers.map(user => {
+            if (user.type === 0 && avatarMap.has(user.name)) {
+              const realAvatar = avatarMap.get(user.name);
+              return {
+                ...user,
+                avatar: realAvatar || user.avatar
+              };
+            }
+            return user;
+          });
+          
+          setMessages(updatedUsers);
+        } else {
+          setMessages(mergedUsers);
+        }
       } catch (error) {
         console.error("Error loading Firebase contacts:", error);
         // Fallback to backend data only
@@ -114,9 +136,24 @@ const ChatSidebar = () => {
     // Nếu chưa có, thêm vào user list và lưu vào Firebase
     if (!isUserInList) {
       console.log(`Adding ${senderName} to user list`);
+      
+      // Fetch avatar thực cho user mới (chỉ cho người dùng, không phải nhóm)
+      let userAvatar = messageType === 1 ? "👥" : "👨‍💼";
+      if (messageType === 0) {
+        try {
+          const avatarMap = await getUserAvatars([senderName]);
+          const fetchedAvatar = avatarMap.get(senderName);
+          if (fetchedAvatar) {
+            userAvatar = fetchedAvatar;
+          }
+        } catch (error) {
+          console.error("Error fetching avatar:", error);
+        }
+      }
+      
       const newUser: IMessage = {
         name: senderName,
-        avatar: messageType === 1 ? "👥" : "👨‍💼",
+        avatar: userAvatar,
         actionTime: data.data.createAt || new Date().toLocaleString('vi-VN'),
         type: messageType,
       };
@@ -195,7 +232,7 @@ const ChatSidebar = () => {
               key={msg.actionTime}
               message={{
                 name: msg.name,
-                avatar: msg.type === 1 ? "👥" : "👨‍💼",
+                avatar: msg.avatar || (msg.type === 1 ? "👥" : "👨‍💼"), // Sử dụng avatar thực, fallback về emoji
                 actionTime: msg.actionTime,
                 type: msg.type,
               }}
