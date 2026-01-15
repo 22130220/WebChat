@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { setProfile, setLoading, setError, selectUserProfile, selectProfileLoading } from '../../stores/userProfileSlice';
 import { getUserProfile, createDefaultProfile } from '../../services/firebaseProfileService';
 import EditProfileModal from './EditProfileModal';
@@ -11,6 +12,7 @@ interface Props {
 
 export default function UserProfileModal({ username, onClose }: Props) {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const profile = useSelector(selectUserProfile);
     const loading = useSelector(selectProfileLoading);
     const currentUsername = localStorage.getItem("USER_NAME") || "";
@@ -38,6 +40,11 @@ export default function UserProfileModal({ username, onClose }: Props) {
             console.error("Error loading profile:", error);
             dispatch(setError("Không thể tải thông tin hồ sơ"));
         }
+    };
+
+    const handleSendMessage = () => {
+        onClose(); // Close modal first
+        navigate(`/chat/${username}/type/0`); // Navigate to chat with user (type=0 for individual)
     };
 
     if (loading) {
@@ -153,8 +160,8 @@ export default function UserProfileModal({ username, onClose }: Props) {
                             </div>
                         </div>
 
-                        {/* Update Button - Only show for own profile */}
-                        {isOwnProfile && (
+                        {/* Action Button */}
+                        {isOwnProfile ? (
                             <button
                                 onClick={() => setShowEditModal(true)}
                                 className="w-full py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
@@ -163,6 +170,16 @@ export default function UserProfileModal({ username, onClose }: Props) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                                 Cập nhật
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSendMessage}
+                                className="w-full py-2.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                Nhắn tin
                             </button>
                         )}
                     </div>
