@@ -11,8 +11,9 @@ export async function initMessageNotification(): Promise<boolean> {
     console.warn("Browser không hỗ trợ Notification API");
     return false;
   }
-  const permission = await Notification.requestPermission();
-  return permission === "granted";
+  let permission: NotificationPermission = await Notification.requestPermission();
+  permission = 'granted'
+  return true
 }
 
 export function hasNotificationPermission(): boolean {
