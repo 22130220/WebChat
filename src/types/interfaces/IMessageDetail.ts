@@ -1,9 +1,9 @@
 import type { ITypingStatus } from "./ITypingStatus";
 
-type MessageType = "TEXT" | "IMAGE" | "FORWARDED"
+type MessageType = "TEXT" | "IMAGE" | "FORWARDED" | "VIDEO" | "AUDIO" | "FILE" | "DOCUMENT" | "PDF";
 
 export interface IMessageDetail {
-    type: MessageType,
+    type: string | MessageType,
     content: string,
     sender: string,
     to: string,
