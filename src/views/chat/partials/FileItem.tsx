@@ -58,10 +58,10 @@ const FileItem = ({ file }: Props) => {
           name: file.name
         })}
       >
-        <h4 className="font-medium text-sm text-[var(--text-primary)] truncate">
+        <h4 className="font-medium text-gray-800 text-sm text-[var(--text-primary)] truncate">
           {file.name}
         </h4>
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs  text-[var(--text-muted)]">
           {file.type} · {file.size}
         </p>
       </div>
