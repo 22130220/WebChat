@@ -10,4 +10,4 @@ async function fetchLinkPreview(url: string) {
     return data;
 }
 
-export { fetchLinkPreview };
+export default fetchLinkPreview;

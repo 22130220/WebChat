@@ -44,15 +44,26 @@ export default function ChatMainInput({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle Emoji Click
+  const toBase64 = (str: string) => {
+    return window.btoa(unescape(encodeURIComponent(str)));
+  }
+
+  const fromBase64 = (b64: string) => {
+    return decodeURIComponent(escape(window.atob(b64)));
+  }
+
   const onEmojiClick = (emojiData: EmojiClickData) => {
-    setMessage(message + emojiData.emoji);
+    const emoji = emojiData.emoji;
+    // const base64Emoji = toBase64(emoji);
+
+    // fromBase64(base64Emoji);
+    setMessage(message + emoji);
     setShowPicker(false);
   };
 
   /** Handle File Change (support multiple)
    * files : currently selected files
    * newFiles : newly selected files
-   *
    */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -166,7 +177,7 @@ export default function ChatMainInput({
     if (message.trim()) {
       const messageChat: IMessageDetail = {
         type: "TEXT",
-        content: message,
+        content: toBase64(message.trim()),
         sender: username,
         to: `${name}`,
         timestamp: new Date().toISOString(),
@@ -272,6 +283,7 @@ export default function ChatMainInput({
         }
       }
     }
+
 
     const messagePayload = {
       action: "onchat",

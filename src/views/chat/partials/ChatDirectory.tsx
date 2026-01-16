@@ -4,70 +4,46 @@ import FileItem from "../partials/FileItem";
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useEvent } from "../../../hooks/useEvent";
-import { supabaseClient } from "../../../services/supabaseService";
+import { fetchFiles } from "../../../services/supabaseService";
 import { useSelector } from "react-redux";
 import { selectGroupMembers } from "../../../stores/groupMembersSlice";
 import { getUserAvatars } from "../../../services/firebaseProfileService";
 import UserProfileModal from "../../profile/UserProfileModal";
 
+const isMedia = (file: any) => {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'mkv'];
+  return mediaExtensions.includes(ext);
+};
+
 const ChatDirectory = () => {
   const params = useParams();
+  const receiver = params.name;
+  const type = params.type;
+
   const [previewFiles, setPreviewFiles] = useState<any[]>([])
   const [allFiles, setAllFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const receiver = params.name;
-  const type = params.type;
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"FILES" | "MEDIA">("MEDIA");
-  
+
   // Lấy danh sách thành viên nhóm từ Redux store
   const groupMembers = useSelector(selectGroupMembers);
   const isGroup = Number(type) === 1;
-  
+
   // State để lưu avatars của các thành viên
   const [memberAvatars, setMemberAvatars] = useState<Map<string, string>>(new Map());
-  
+
   // State để quản lý profile modal
   const [selectedMemberUsername, setSelectedMemberUsername] = useState<string | null>(null);
 
-  const fetchFiles = async (limit?: number) => {
-    const sender = localStorage.getItem("USER_NAME") || "";
-    const to = receiver;
-    setLoading(true);
-    const supabase = supabaseClient;
-    let query = supabase.from("chat_files")
-      .select("*")
-      .or(`and(sender.eq."${sender}",receiver.eq."${to}"),and(sender.eq."${to}",receiver.eq."${sender}")`)
-      .order('created_at', { ascending: false });
-
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Chi tiết lỗi:", error);
-    } else {
-      const formattedFiles = data.map(item => ({
-        id: item.id,
-        name: item.file_name,
-        type: item.file_type,
-        size: "Unknown",
-        url: item.file_url
-      }));
-      if (limit) {
-        setPreviewFiles(formattedFiles);
-      } else {
-        setAllFiles(formattedFiles);
-      }
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
     if (receiver) {
-      fetchFiles(5);
+      setLoading(true);
+      fetchFiles(5, receiver).then(files => {
+        setPreviewFiles(files || []);
+        setLoading(false);
+      });
     }
   }, [receiver]);
 
@@ -85,25 +61,30 @@ const ChatDirectory = () => {
     setLoading(true);
     setShowModal(true);
     setActiveTab("MEDIA");
-    fetchFiles();
+    setLoading(true);
+    fetchFiles(undefined, receiver).then(files => {
+      setAllFiles(files || []);
+      setLoading(false);
+    });
   };
 
   // Listen for file updates
   useEvent("updateChatFiles", (data: any) => {
     if (!data) return;
     if (data.sender === receiver || data.receiver === receiver) {
-      fetchFiles(5);
+      setLoading(true);
+      fetchFiles(5, receiver).then(files => {
+        setPreviewFiles(files || []);
+        setLoading(false);
+      });
     }
     if (showModal) {
-      fetchFiles();
+      fetchFiles(undefined, receiver).then(files => {
+        setAllFiles(files || []);
+        setLoading(false);
+      });
     }
   });
-
-  const isMedia = (file: any) => {
-    const ext = file.name.split('.').pop().toLowerCase();
-    const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'mkv'];
-    return mediaExtensions.includes(ext);
-  };
 
   const { media, nonMedia } = useMemo(() => {
     const media = allFiles.filter(isMedia);
@@ -115,8 +96,6 @@ const ChatDirectory = () => {
   if (!receiver || !type) {
     return null;
   }
-
-
 
   return (
     <div className="w-80 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] h-screen overflow-y-auto">
@@ -135,8 +114,8 @@ const ChatDirectory = () => {
           <div className="space-y-3">
             {groupMembers.length > 0 ? (
               groupMembers.map((member) => (
-                <TeamMemberItem 
-                  key={member.id} 
+                <TeamMemberItem
+                  key={member.id}
                   member={{
                     id: member.id,
                     name: member.name,
@@ -237,3 +216,5 @@ const ChatDirectory = () => {
 };
 
 export default ChatDirectory;
+
+

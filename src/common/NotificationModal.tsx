@@ -22,7 +22,7 @@ function notificationModal({ message, returnPage }: NotificationModalProps) {
                 </svg>
             </div>
 
-            <h2 className="text-lg font-semibold text-center mt-4">Success!</h2>
+            <h2 className="text-lg font-semibold text-center mt-4">Thành công!</h2>
 
             <p className="text-gray-600 text-center mt-2">
                 {message}
