@@ -53,6 +53,10 @@ function createSocket(path: string) {
             pubSub.publish("get_people_chat_messages_success", data)
             break;
           }
+          case "GET_ROOM_CHAT_MES": {
+            pubSub.publish("get_room_chat_messages_success", data)
+            break;
+          }
           case "SEND_CHAT": {
             handleSendChat(data, pubSub);
             break;

@@ -87,3 +87,43 @@ export async function createDefaultProfile(
     await updateUserProfile(username, defaultProfile);
     return defaultProfile;
 }
+
+/**
+ * Lấy avatars của nhiều users cùng lúc
+ * @param usernames - Danh sách usernames
+ * @returns Map từ username -> avatar URL (hoặc empty string nếu chưa có)
+ */
+export async function getUserAvatars(
+    usernames: string[]
+): Promise<Map<string, string>> {
+    const avatarMap = new Map<string, string>();
+
+    try {
+        // Fetch tất cả profiles song song
+        const promises = usernames.map(async (username) => {
+            try {
+                const profileDocRef = doc(db, "user_profiles", username);
+                const docSnap = await getDoc(profileDocRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    return { username, avatar: data.avatar || "" };
+                }
+                return { username, avatar: "" };
+            } catch (error) {
+                console.error(`Error fetching avatar for ${username}:`, error);
+                return { username, avatar: "" };
+            }
+        });
+
+        const results = await Promise.all(promises);
+        results.forEach(({ username, avatar }) => {
+            avatarMap.set(username, avatar);
+        });
+
+        return avatarMap;
+    } catch (error) {
+        console.error("Error getting user avatars:", error);
+        return avatarMap;
+    }
+}

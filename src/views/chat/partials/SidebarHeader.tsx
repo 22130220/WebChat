@@ -1,8 +1,9 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toggleTheme } from '../../../stores/themeSlice';
 import type { RootState } from '../../../stores/store';
 import UserProfileModal from '../../profile/UserProfileModal';
+import { getUserProfile } from '../../../services/firebaseProfileService';
 
 interface Props {
   setShowCreateRoom: (show: boolean) => void;
@@ -14,6 +15,18 @@ const SidebarHeader = ({ setShowCreateRoom, quantityUser }: Props) => {
   const dispatch = useDispatch();
   const { theme } = useSelector((state: RootState) => state.theme);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string>("");
+
+  // Fetch avatar của user hiện tại
+  useEffect(() => {
+    if (userName) {
+      getUserProfile(userName).then(profile => {
+        if (profile?.avatar) {
+          setUserAvatar(profile.avatar);
+        }
+      });
+    }
+  }, [userName]);
 
   const handleToggleTheme = () => {
     dispatch(toggleTheme());
@@ -50,25 +63,37 @@ const SidebarHeader = ({ setShowCreateRoom, quantityUser }: Props) => {
     }
   };
 
+  const isAvatarImage = userAvatar && userAvatar.startsWith('data:image/');
+
   return (
     <>
       <div className="p-4 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] flex items-center justify-between">
         <div className="flex items-center gap-2">
+           {/* Profile Button with Avatar */}
+          <button
+            onClick={handleViewProfile}
+            className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] flex items-center justify-center transition-colors overflow-hidden"
+            title="Hồ sơ của tôi"
+          >
+            {isAvatarImage ? (
+              <img 
+                src={userAvatar} 
+                alt={userName} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <svg className="w-5 h-5 text-[var(--text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
+          </button>
+          
           <h2 className="font-semibold text-[var(--text-primary)]">{userName}</h2>
           <span className="text-sm text-[var(--text-muted)]">{quantityUser}</span>
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Profile Button */}
-          <button
-            onClick={handleViewProfile}
-            className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] flex items-center justify-center transition-colors"
-            title="Hồ sơ của tôi"
-          >
-            <svg className="w-5 h-5 text-[var(--text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </button>
+         
 
           {/* Theme Toggle Button */}
           <button

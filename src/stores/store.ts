@@ -6,6 +6,7 @@ import onlineStatusReducer from './onlineStatusSlice.ts'
 import recipientsReducer from './recipientsSlice.ts'
 import notificationReducer from './notificationSlice.ts'
 import userProfileReducer from './userProfileSlice.ts'
+import groupMembersReducer from './groupMembersSlice.ts'
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     recipients: recipientsReducer,
     notification: notificationReducer,
     userProfile: userProfileReducer,
+    groupMembers: groupMembersReducer,
   },
 })
 
