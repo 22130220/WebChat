@@ -16,7 +16,7 @@ export default function ChatMainHeader() {
   useEffect(() => {
     // Reset avatar khi chuyển chat
     setPartnerAvatar("");
-    
+
     // Chỉ check online status và fetch avatar khi mở chat với người (type === 0)
     if (name && isPerson) {
       const checkOnlinePayload = {
@@ -29,7 +29,7 @@ export default function ChatMainHeader() {
         }
       };
       wSocket.send(JSON.stringify(checkOnlinePayload));
-      
+
       // Fetch avatar của người đang chat
       getUserProfile(name).then(profile => {
         if (profile?.avatar) {
@@ -57,9 +57,9 @@ export default function ChatMainHeader() {
             {!isPerson ? (
               <span>👥</span>
             ) : isAvatarImage ? (
-              <img 
-                src={partnerAvatar} 
-                alt={name} 
+              <img
+                src={partnerAvatar}
+                alt={name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -84,7 +84,7 @@ export default function ChatMainHeader() {
         <div className="flex items-center gap-2">
           {/* Profile Button - Only show for person (type === 0) */}
           {isPerson && (
-            <button 
+            <button
               onClick={handleViewProfile}
               className="px-4 py-2 text-[var(--accent-primary)] hover:bg-[var(--accent-light)] rounded-md flex items-center gap-2 font-medium transition-colors"
             >

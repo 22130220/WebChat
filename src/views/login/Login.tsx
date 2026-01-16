@@ -58,7 +58,7 @@ export default function Login() {
     localStorage.setItem("USER_NAME", userName);
     localStorage.setItem("RE_LOGIN_CODE", RE_LOGIN_CODE);
     setNotificationMessage(
-      `Welcome back, ${userName}! You have logged in successfully.`,
+      `Chào mừng quay trở lại, ${userName}! Bạn đã đăng nhập thành công.`,
     );
     setShowNotification(true);
   }
@@ -99,14 +99,14 @@ export default function Login() {
             <div className="flex items-center text-2xl text-[var(--text-primary)]">NLU</div>
           </div>
           <div className="flex flex-col flex-1 h-full gap-4">
-            <div className="font-medium text-[var(--text-primary)]">Nice to see you again</div>
+            <div className="font-medium text-[var(--text-primary)]">Rất vui được gặp lại bạn</div>
             <div className="flex font-medium text- flex-col">
               <div className="flex flex-col mt-4">
                 <label
                   htmlFor="username"
                   className="font-bold text-sm text-left text-[var(--text-primary)]"
                 >
-                  Username:
+                  Tên đăng nhập:
                 </label>
                 <input
                   type="text"
@@ -121,7 +121,7 @@ export default function Login() {
                   htmlFor="password"
                   className="block text-sm font-bold text-[var(--text-primary)] text-left "
                 >
-                  Password:
+                  Mật khẩu:
                 </label>
                 <div className="flex flex-col items-center">
                   <input
@@ -157,7 +157,7 @@ export default function Login() {
                   className="block ml-2 text-sm text-[var(--text-secondary)]"
                 >
                   {" "}
-                  Remember me{" "}
+                  Nhớ Mật Khẩu{" "}
                 </label>
               </div>
             </div>
@@ -166,12 +166,12 @@ export default function Login() {
               className="bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] p-2 mt-3 rounded-md text-white font-medium transition-colors"
               onClick={handleSignIn}
             >
-              Sign In
+              Đăng Nhập
             </button>
             <div className="flex justify-center gap-3">
-              <div className="text-sm text-[var(--text-secondary)]">Don't have an account?</div>
+              <div className="text-sm text-[var(--text-secondary)]">Bạn chưa có tài khoản?</div>
               <Link to="/register" className="text-[var(--accent-primary)] hover:text-[var(--accent-hover)] text-sm transition-colors">
-                Sign up now
+                Đăng Ký
               </Link>
             </div>
           </div>

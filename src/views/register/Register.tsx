@@ -10,7 +10,7 @@ export default function Register() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
-  const [message, setMessage] = useState("You have registered successfully.");
+  const [message, setMessage] = useState("Bạn đã đăng ký thành công.");
   const navigate = useNavigate();
 
   const payLoadRegister = {
@@ -26,7 +26,7 @@ export default function Register() {
 
   function handleRegister() {
     if (!userName || !password) {
-      alert("Please enter both username and password.");
+      alert("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
       return;
     }
     wSocket.send(JSON.stringify(payLoadRegister));
@@ -40,7 +40,7 @@ export default function Register() {
 
   function registerSuccess() {
     setShow(true);
-    setMessage(`User ${userName} has been registered successfully.`);
+    setMessage(`Người dùng ${userName} đã được đăng ký thành công.`);
   }
 
   return (
@@ -60,11 +60,11 @@ export default function Register() {
           </div>
 
           <div className="flex flex-col flex-1 gap-4">
-            <div className="font-medium">Create your account</div>
+            <div className="font-medium">Tạo tài khoản mới</div>
 
             <div className="flex flex-col ">
               <label htmlFor="username" className="font-bold text-sm text-left">
-                Username:
+                Tên đăng nhập:
               </label>
               <input
                 type="text"
@@ -76,7 +76,7 @@ export default function Register() {
 
             <div className="flex flex-col">
               <label htmlFor="password" className="font-bold text-sm text-left">
-                Password:
+                Mật khẩu:
               </label>
               <input
                 type="password"
@@ -93,13 +93,13 @@ export default function Register() {
               className="bg-[#007AFF] p-2 mt-3 text-white font-medium rounded-lg"
               onClick={handleRegister}
             >
-              Register
+              Đăng Ký
             </button>
 
             <div className="flex justify-center gap-3">
-              <div className="text-sm">Already have an account?</div>
+              <div className="text-sm">Bạn đã có tài khoản?</div>
               <Link to="/login" className="text-blue-600 text-sm">
-                Sign in
+                Đăng Nhập
               </Link>
             </div>
           </div>
