@@ -11,20 +11,28 @@ import {
 } from "../../../services/supabaseService";
 import pubSub from "../../../utils/eventBus";
 import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
-import { useClipboard } from "../../../hooks/useClipboard";
 import { hasFile } from "../../../services/clipboardServices";
 import { generateId } from "../../../helpers/StringHelper";
+import type { IClipboardItem } from "../../../types/interfaces/IClipboard";
 
 interface Props {
-  setMessages: Function;
+  setMessages: (updater: (prev: IChatMessage[]) => IChatMessage[]) => void;
+  clipboardItems: IClipboardItem[];
+  pasteEvent: <T extends HTMLElement>(event: React.ClipboardEvent<T>) => void;
+  removeItem: (id: string) => void;
+  clearItems: () => void;
 }
 
-export default function ChatMainInput({ setMessages }: Props) {
+export default function ChatMainInput({
+  setMessages,
+  clipboardItems,
+  pasteEvent,
+  removeItem,
+  clearItems,
+}: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const { name, type } = useParams();
   const [message, setMessage] = useState("");
-  const { pasteEvent, items, isLoading, removeItem, clearItems } =
-    useClipboard();
   const username = localStorage.getItem("USER_NAME") || "";
   const typeEvent = Number(type) === 1 ? "room" : "people";
 
@@ -105,31 +113,43 @@ export default function ChatMainInput({ setMessages }: Props) {
   }
 
   /**
-   * 
+   *
    */
   function getMessageTypeFromFileType(file: File): string {
-    const extension = file.name.split('.').pop()?.toLowerCase() || "";
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
     const type = file.type.toLowerCase();
 
     if (extension === "pdf" || type === "application/pdf") {
       return "PDF";
     }
 
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension) || type.startsWith("image/")) {
+    if (
+      ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(extension) ||
+      type.startsWith("image/")
+    ) {
       return "IMAGE";
     }
 
-    if (['doc', 'docx'].includes(extension) ||
+    if (
+      ["doc", "docx"].includes(extension) ||
       type === "application/msword" ||
-      type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
       return "DOCUMENT";
     }
 
-    if (['mp4', 'mov', 'avi', 'mkv'].includes(extension) || type.startsWith("video/")) {
+    if (
+      ["mp4", "mov", "avi", "mkv"].includes(extension) ||
+      type.startsWith("video/")
+    ) {
       return "VIDEO";
     }
 
-    if (['mp3', 'wav', 'ogg'].includes(extension) || type.startsWith("audio/")) {
+    if (
+      ["mp3", "wav", "ogg"].includes(extension) ||
+      type.startsWith("audio/")
+    ) {
       return "AUDIO";
     }
 
@@ -154,7 +174,7 @@ export default function ChatMainInput({ setMessages }: Props) {
       messageList.push(messageChat);
     }
 
-    if (selectedFiles.length > 0 || items.length > 0) {
+    if (selectedFiles.length > 0 || clipboardItems.length > 0) {
       for (const file of selectedFiles) {
         try {
           const uploadResult = await getImageFromSupabase(file);
@@ -206,7 +226,7 @@ export default function ChatMainInput({ setMessages }: Props) {
         }
       }
 
-      for (const item of items.filter(hasFile)) {
+      for (const item of clipboardItems.filter(hasFile)) {
         try {
           const uploadResult = await getImageFromSupabase(item.file);
           const publicUrl = uploadResult.publicUrl;
@@ -295,7 +315,7 @@ export default function ChatMainInput({ setMessages }: Props) {
     <>
       <div className="px-6 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-primary)]">
         {/* Preview File area */}
-        {(selectedFiles.length > 0 || items.length > 0) && (
+        {(selectedFiles.length > 0 || clipboardItems.length > 0) && (
           <div className="mb-3 flex items-center gap-2 overflow-x-auto">
             {selectedFiles.map((file, idx) => (
               <div
@@ -328,7 +348,7 @@ export default function ChatMainInput({ setMessages }: Props) {
               </div>
             ))}
 
-            {items.filter(hasFile).map((item, idx) => (
+            {clipboardItems.filter(hasFile).map((item) => (
               <div
                 key={`${item.fileName}-${item.lastModified}`}
                 className="relative p-2 bg-[var(--bg-tertiary)] rounded-lg flex items-center gap-2 border border-[var(--border-primary)]"

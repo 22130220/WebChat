@@ -7,8 +7,6 @@ import { ArrowDown, Download, X, Forward } from "lucide-react";
 import ForwardMessageModal from "./ForwardMessageModal";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../stores/store";
-import { extractUrl } from "../../../utils/extractUrl";
-import LinkPreview from "../../../components/LinkPreview";
 import MessageContent from "./MessageContent";
 import { getUserAvatars } from "../../../services/firebaseProfileService";
 
@@ -90,18 +88,18 @@ export default function ChatMainPartial({
       const usernames = new Set<string>();
       usernames.add(username); // Thêm user hiện tại
       if (partnerName) usernames.add(partnerName); // Thêm người chat
-      
+
       // Lấy tất cả senders từ messages
-      messages.forEach(msg => {
+      messages.forEach((msg) => {
         try {
           const parsed: IMessageDetail[] = JSON.parse(msg.mes);
-          parsed.forEach(detail => {
+          parsed.forEach((detail) => {
             if (detail.sender) usernames.add(detail.sender);
           });
         } catch {}
       });
 
-      getUserAvatars(Array.from(usernames)).then(map => {
+      getUserAvatars(Array.from(usernames)).then((map) => {
         setAvatarMap(map);
       });
     }
@@ -261,10 +259,11 @@ export default function ChatMainPartial({
                 >
                   {username !== msg.sender && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm mr-2 shrink-0 overflow-hidden">
-                      {avatarMap.has(msg.sender) && avatarMap.get(msg.sender)?.startsWith('data:image/') ? (
-                        <img 
-                          src={avatarMap.get(msg.sender)} 
-                          alt={msg.sender} 
+                      {avatarMap.has(msg.sender) &&
+                      avatarMap.get(msg.sender)?.startsWith("data:image/") ? (
+                        <img
+                          src={avatarMap.get(msg.sender)}
+                          alt={msg.sender}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -275,10 +274,11 @@ export default function ChatMainPartial({
                   <div className="flex flex-col max-w-md">
                     <div className="relative">
                       <div
-                        className={`px-4 py-2 rounded-2xl ${username === msg.sender
-                          ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
-                          : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
-                          }`}
+                        className={`px-4 py-2 rounded-2xl ${
+                          username === msg.sender
+                            ? "bg-[var(--chat-bubble-sent)] text-[var(--chat-text-sent)]"
+                            : "bg-[var(--chat-bubble-received)] text-[var(--chat-text-received)]"
+                        }`}
                       >
                         {/* {msg.type === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
@@ -302,9 +302,18 @@ export default function ChatMainPartial({
                           msg.originalType === "TEXT" ? (
                           <p className="text-sm">{msg.content}</p>
                         ) : null} */}
-                        <MessageContent msg={msg} isme={isme} onImageClick={(url) => setSelectedImage({ imageUrl: url, name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}` })} />
+                        <MessageContent
+                          msg={msg}
+                          isme={isme}
+                          onImageClick={(url) =>
+                            setSelectedImage({
+                              imageUrl: url,
+                              name: isme ? "Ảnh của bạn" : `Ảnh của ${msg.to}`,
+                            })
+                          }
+                        />
                       </div>
-                     
+
                       {/* Forward button */}
                       {/* {hoveredMessageIndex === index &&
                         (msg.type === "TEXT" ||
@@ -330,15 +339,15 @@ export default function ChatMainPartial({
                             <Forward size={14} />
                           </button>
                         )}
-
                     </div>
                   </div>
                   {username === msg.sender && (
                     <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-sm ml-2 shrink-0 overflow-hidden">
-                      {avatarMap.has(username) && avatarMap.get(username)?.startsWith('data:image/') ? (
-                        <img 
-                          src={avatarMap.get(username)} 
-                          alt={username} 
+                      {avatarMap.has(username) &&
+                      avatarMap.get(username)?.startsWith("data:image/") ? (
+                        <img
+                          src={avatarMap.get(username)}
+                          alt={username}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -346,7 +355,6 @@ export default function ChatMainPartial({
                       )}
                     </div>
                   )}
-
                 </div>
               );
             })}

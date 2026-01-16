@@ -6,6 +6,8 @@ import ChatMainInput from "./ChatMainInput";
 import wSocket from "../../../utils/wSocket";
 import { useParams } from "react-router-dom";
 import { useEvent } from "../../../hooks/useEvent";
+import { useClipboard } from "../../../hooks/useClipboard";
+import { Upload } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { setGroupMembers, clearGroupMembers } from "../../../stores/groupMembersSlice";
 
@@ -15,6 +17,16 @@ const ChatMain: React.FC = () => {
   const [page, SetPage] = useState<number>(1);
   const [canLoadingMove, setCanLoadingMore] = useState<boolean>(true);
   const dispatch = useDispatch();
+
+  // Clipboard & Drag/Drop state
+  const {
+    items: clipboardItems,
+    isDragging,
+    dropZoneProps,
+    pasteEvent,
+    removeItem,
+    clearItems,
+  } = useClipboard();
 
   // Reset state khi chuyển sang người/room khác
   useEffect(() => {
@@ -109,13 +121,32 @@ const ChatMain: React.FC = () => {
   useEvent("get_room_chat_messages_success", setRoomChatMess);
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--bg-primary)] h-screen">
+    <div
+      {...dropZoneProps}
+      className="flex-1 flex flex-col bg-[var(--bg-primary)] h-screen relative"
+    >
+      {/* Drop Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-blue-500/20 border-2 border-dashed border-blue-500 flex flex-col items-center justify-center z-50 pointer-events-none">
+          <Upload className="w-12 h-12 text-blue-500 mb-3" />
+          <span className="text-blue-600 font-medium text-lg">
+            Tha file vao day de gui
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <ChatMainHeader />
       {/* Messages */}
       <ChatMainPartial messages={messages} setPageUp={canSetPageUp} />
       {/* Input */}
-      <ChatMainInput setMessages={setMessages} />
+      <ChatMainInput
+        setMessages={setMessages}
+        clipboardItems={clipboardItems}
+        pasteEvent={pasteEvent}
+        removeItem={removeItem}
+        clearItems={clearItems}
+      />
     </div>
   );
 };
