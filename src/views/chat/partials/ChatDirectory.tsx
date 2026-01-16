@@ -116,8 +116,6 @@ const ChatDirectory = () => {
     return null;
   }
 
-
-
   return (
     <div className="w-80 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] h-screen overflow-y-auto">
       <DirectoryHeader />

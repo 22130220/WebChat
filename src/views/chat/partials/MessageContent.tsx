@@ -3,15 +3,24 @@ import type { IMessageDetail } from "../../../types/interfaces/IMessageDetail";
 import { extractUrl } from "../../../utils/extractUrl";
 
 const MEDIA_STYLE = "max-w-[300px] w-full rounded-xl object-cover cursor-pointer shadow-sm";
+const safeDecodeURIComponent = (str: string) => {
+    try {
+        if (!str || str.trim().length === 0) return "";
+        if (str.includes(' ')) return str;
+
+        return decodeURIComponent(escape(window.atob(str)));
+    } catch (e) {
+        return str;
+    }
+};
 
 const MessageContent = ({ msg, isme, onImageClick }: { msg: IMessageDetail; isme: boolean; onImageClick: (url: string) => void }) => {
-    const detectUrl = extractUrl(msg.content || "");
-    
+
     const renderTextWithPreview = () => {
         const detectUrl = extractUrl(msg.content || "");
         return (
             <div className="flex flex-col">
-                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{safeDecodeURIComponent(msg.content)}</p>
                 {detectUrl && (
                     <div className="mt-2 -mx-1">
                         <LinkPreview url={detectUrl} isMe={isme} />
@@ -22,7 +31,6 @@ const MessageContent = ({ msg, isme, onImageClick }: { msg: IMessageDetail; isme
     };
 
     const renderContent = () => {
-       
         switch (msg.type) {
             case "TEXT":
             case "FORWARDED":
@@ -54,12 +62,14 @@ const MessageContent = ({ msg, isme, onImageClick }: { msg: IMessageDetail; isme
             case "DOCUMENT":
             case "PDF":
                 return (
-                <div className="-mx-1"> 
-                    <LinkPreview url={msg.content} isMe={isme} />
-                </div>
-            );
+                    <div className="-mx-1">
+                        <LinkPreview url={msg.content} isMe={isme} />
+                    </div>
+                );
             default:
-                return <p className="text-sm">{msg.content}</p>;
+                return <p className="text-sm">
+
+                    {safeDecodeURIComponent(msg.content || "")}</p>;
         }
     };
 
