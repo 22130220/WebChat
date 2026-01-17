@@ -11,7 +11,7 @@ export interface IMessageDetail {
     // Forward metadata (optional)
     originalSender?: string,
     originalTimestamp?: string,
-    originalType?: "TEXT" | "IMAGE",
+    originalType?: MessageType,
     forwardedBy?: string
 }
 

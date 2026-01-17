@@ -312,6 +312,11 @@ export default function ChatMainInput({
       ...prev,
     ]);
 
+    pubSub.publish("refreshUserList", {
+      receiver: name,
+      type: Number(type),
+    });
+
     setMessage("");
     clearAllFiles();
   };

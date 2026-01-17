@@ -112,26 +112,63 @@ const ChatSidebar = () => {
 
   // Tự động thêm người gửi vào user list và lưu vào Firebase
   const handleReceiveNewMessage = async (data: any) => {
-    console.log("Received new message from:", data.data.name);
+    console.log("Received new message:", data.data);
 
-    const senderName = data.data.name;
     const messageType = data.data.type;
+    const newActionTime =
+      data.data.createAt || new Date().toLocaleString("vi-VN");
+    const contactName = messageType === 1 ? data.data.to : data.data.name;
 
-    // Kiểm tra xem người gửi đã có trong user list chưa
-    const isUserInList = messages.some(
-      (msg) => msg.name === senderName && msg.type === messageType,
+    console.log(
+      `Processing message for contact: ${contactName} (type: ${messageType})`,
     );
 
-    // Nếu chưa có, thêm vào user list và lưu vào Firebase
-    if (!isUserInList) {
-      console.log(`Adding ${senderName} to user list`);
+    const existingUserIndex = messages.findIndex(
+      (msg) => msg.name === contactName && msg.type === messageType,
+    );
+
+    if (existingUserIndex !== -1) {
+      console.log(
+        `Moving ${contactName} (type: ${messageType}) to top of list`,
+      );
+
+      setMessages((prev) => {
+        const existingUser = prev[existingUserIndex];
+        const filteredList = prev.filter(
+          (_, index) => index !== existingUserIndex,
+        );
+
+        const updatedUser: IMessage = {
+          ...existingUser,
+          actionTime: newActionTime,
+        };
+
+        return [updatedUser, ...filteredList];
+      });
+
+      const currentUser = localStorage.getItem("USER_NAME");
+      if (currentUser) {
+        try {
+          const existingUser = messages[existingUserIndex];
+          const updatedUser: IMessage = {
+            ...existingUser,
+            actionTime: newActionTime,
+          };
+          await saveUserContact(currentUser, updatedUser);
+          console.log(`Updated ${contactName} in Firebase`);
+        } catch (error) {
+          console.error("Error updating Firebase:", error);
+        }
+      }
+    } else {
+      console.log(`Adding ${contactName} (type: ${messageType}) to user list`);
 
       // Fetch avatar thực cho user mới (chỉ cho người dùng, không phải nhóm)
       let userAvatar = messageType === 1 ? "👥" : "👨‍💼";
       if (messageType === 0) {
         try {
-          const avatarMap = await getUserAvatars([senderName]);
-          const fetchedAvatar = avatarMap.get(senderName);
+          const avatarMap = await getUserAvatars([contactName]);
+          const fetchedAvatar = avatarMap.get(contactName);
           if (fetchedAvatar) {
             userAvatar = fetchedAvatar;
           }
@@ -141,9 +178,9 @@ const ChatSidebar = () => {
       }
 
       const newUser: IMessage = {
-        name: senderName,
+        name: contactName,
         avatar: userAvatar,
-        actionTime: data.data.createAt || new Date().toLocaleString("vi-VN"),
+        actionTime: newActionTime,
         type: messageType,
       };
 
@@ -152,7 +189,7 @@ const ChatSidebar = () => {
       if (currentUser) {
         try {
           await saveUserContact(currentUser, newUser);
-          console.log(`Saved ${senderName} to Firebase`);
+          console.log(`Saved ${contactName} to Firebase`);
         } catch (error) {
           console.error("Error saving to Firebase:", error);
         }
@@ -205,6 +242,11 @@ const ChatSidebar = () => {
     console.log("Join room, refreshing user list");
     fetchUserList();
   };
+
+  useEvent("refreshUserList", () => {
+    console.log("Message sent, refreshing user list");
+    fetchUserList();
+  });
 
   return (
     <div className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] h-screen flex flex-col relative">
