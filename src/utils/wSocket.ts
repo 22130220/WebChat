@@ -97,6 +97,10 @@ function createSocket(path: string) {
             pubSub.publish("create_room_error", data)
             break;
           }
+          case WSOCKET_EVENTS.REGISTER: {
+            pubSub.publish("register_error", data);
+            break;
+          }
           case WSOCKET_EVENTS.AUTH: {
             // Xử lý lỗi xác thực (ví dụ: User not Login)
             pubSub.publish("auth_error", data)

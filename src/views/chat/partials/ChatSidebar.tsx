@@ -18,6 +18,7 @@ import { getUserAvatars } from "../../../services/firebaseProfileService";
 import { useDispatch } from "react-redux";
 import { setRecipients } from "../../../stores/recipientsSlice";
 import type { IGetUserListPayload } from "../../../types/interfaces/IWebSocketEvent";
+import { formatShortTime } from "../../../helpers/StringHelper";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -221,7 +222,7 @@ const ChatSidebar = () => {
               message={{
                 name: msg.name,
                 avatar: msg.avatar || (msg.type === 1 ? "👥" : "👨‍💼"), // Sử dụng avatar thực, fallback về emoji
-                actionTime: msg.actionTime,
+                actionTime: formatShortTime(msg.actionTime),
                 type: msg.type,
               }}
               activeMessageName={name || ""}
@@ -248,4 +249,3 @@ const ChatSidebar = () => {
 };
 
 export default ChatSidebar;
-

@@ -1,6 +1,7 @@
 import { store } from "../stores/store";
 import { setUserOnlineStatus } from "../stores/onlineStatusSlice";
 import { PATH_CONSTRAINT } from "../routers";
+import { showError } from "../stores/notificationSlice";
 
 export const GLOBAL_EVENT = {
   relogin_success: (data: any) => {
@@ -21,6 +22,11 @@ export const GLOBAL_EVENT = {
     localStorage.removeItem("RE_LOGIN_CODE");
     localStorage.removeItem("USER_NAME");
     window.location.href = PATH_CONSTRAINT.LOGIN;
-  }
+  },
+  register_error: () => {
+    localStorage.removeItem("RE_LOGIN_CODE");
+    localStorage.removeItem("USER_NAME");
+    store.dispatch(showError(`Tài khoản đã tồn tại`))
+  },
 
 }
