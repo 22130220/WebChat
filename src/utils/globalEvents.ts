@@ -1,5 +1,6 @@
 import { store } from "../stores/store";
 import { setUserOnlineStatus } from "../stores/onlineStatusSlice";
+import { PATH_CONSTRAINT } from "../routers";
 
 export const GLOBAL_EVENT = {
   relogin_success: (data: any) => {
@@ -15,5 +16,11 @@ export const GLOBAL_EVENT = {
         isOnline: data.data.status,
       })
     );
+  },
+  auth_error: () => {
+    localStorage.removeItem("RE_LOGIN_CODE");
+    localStorage.removeItem("USER_NAME");
+    window.location.href = PATH_CONSTRAINT.LOGIN;
   }
+
 }

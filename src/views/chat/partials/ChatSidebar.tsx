@@ -17,6 +17,7 @@ import {
 import { getUserAvatars } from "../../../services/firebaseProfileService";
 import { useDispatch } from "react-redux";
 import { setRecipients } from "../../../stores/recipientsSlice";
+import type { IGetUserListPayload } from "../../../types/interfaces/IWebSocketEvent";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -28,7 +29,7 @@ const ChatSidebar = () => {
 
   const fetchUserList = () => {
     console.log("Requesting user list");
-    const getUserListPayload = {
+    const getUserListPayload: IGetUserListPayload = {
       action: "onchat",
       data: {
         event: "GET_USER_LIST",
@@ -54,19 +55,6 @@ const ChatSidebar = () => {
     }
   }, [messages, name, type]);
 
-  // function fetchUserList() {
-  //   console.log("ChatSidebar mounted, requesting user list");
-  //   const getUserListPayload = {
-  //     action: "onchat",
-  //     data: {
-  //       event: "GET_USER_LIST",
-  //     },
-  //   };
-  //   wSocket.send(JSON.stringify(getUserListPayload));
-  // }
-  //
-  // useEvent("getUserList", fetchUserList);
-
   async function getUserListHandler(data: any) {
     console.log("Received user list:", data);
 
@@ -77,34 +65,34 @@ const ChatSidebar = () => {
       try {
         // Lấy contacts từ Firebase
         const firebaseUsers = await getUserContacts(currentUser);
-        
+
         // Merge backend data với Firebase data
         const mergedUsers = mergeUserLists(backendUsers, firebaseUsers);
-        
+
         console.log("Merged user list:", {
           backend: backendUsers.length,
           firebase: firebaseUsers.length,
           merged: mergedUsers.length,
         });
-        
+
         // Fetch avatars cho tất cả users (chỉ người dùng, không phải nhóm)
-        const individualUsers = mergedUsers.filter(user => user.type === 0);
+        const individualUsers = mergedUsers.filter((user) => user.type === 0);
         if (individualUsers.length > 0) {
-          const usernames = individualUsers.map(user => user.name);
+          const usernames = individualUsers.map((user) => user.name);
           const avatarMap = await getUserAvatars(usernames);
-          
+
           // Cập nhật avatar thực vào messages
-          const updatedUsers = mergedUsers.map(user => {
+          const updatedUsers = mergedUsers.map((user) => {
             if (user.type === 0 && avatarMap.has(user.name)) {
               const realAvatar = avatarMap.get(user.name);
               return {
                 ...user,
-                avatar: realAvatar || user.avatar
+                avatar: realAvatar || user.avatar,
               };
             }
             return user;
           });
-          
+
           setMessages(updatedUsers);
         } else {
           setMessages(mergedUsers);
@@ -124,19 +112,19 @@ const ChatSidebar = () => {
   // Tự động thêm người gửi vào user list và lưu vào Firebase
   const handleReceiveNewMessage = async (data: any) => {
     console.log("Received new message from:", data.data.name);
-    
+
     const senderName = data.data.name;
     const messageType = data.data.type;
-    
+
     // Kiểm tra xem người gửi đã có trong user list chưa
     const isUserInList = messages.some(
-      (msg) => msg.name === senderName && msg.type === messageType
+      (msg) => msg.name === senderName && msg.type === messageType,
     );
-    
+
     // Nếu chưa có, thêm vào user list và lưu vào Firebase
     if (!isUserInList) {
       console.log(`Adding ${senderName} to user list`);
-      
+
       // Fetch avatar thực cho user mới (chỉ cho người dùng, không phải nhóm)
       let userAvatar = messageType === 1 ? "👥" : "👨‍💼";
       if (messageType === 0) {
@@ -150,14 +138,14 @@ const ChatSidebar = () => {
           console.error("Error fetching avatar:", error);
         }
       }
-      
+
       const newUser: IMessage = {
         name: senderName,
         avatar: userAvatar,
-        actionTime: data.data.createAt || new Date().toLocaleString('vi-VN'),
+        actionTime: data.data.createAt || new Date().toLocaleString("vi-VN"),
         type: messageType,
       };
-      
+
       // Lưu vào Firebase để persist và đồng bộ giữa thiết bị
       const currentUser = localStorage.getItem("USER_NAME");
       if (currentUser) {
@@ -168,7 +156,7 @@ const ChatSidebar = () => {
           console.error("Error saving to Firebase:", error);
         }
       }
-      
+
       setMessages((prev) => [newUser, ...prev]);
     }
   };
@@ -250,13 +238,14 @@ const ChatSidebar = () => {
 
       {showCreateRoom && (
         <CreateRoomPanel
-         onClose={() => setShowCreateRoom(false)}
-         onRoomCreated={handleRoomCreated}
-         onJoinRoom={handleJoinRoom}
-         />
+          onClose={() => setShowCreateRoom(false)}
+          onRoomCreated={handleRoomCreated}
+          onJoinRoom={handleJoinRoom}
+        />
       )}
     </div>
   );
 };
 
 export default ChatSidebar;
+

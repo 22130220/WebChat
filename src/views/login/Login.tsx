@@ -6,9 +6,10 @@ import backgroundleft from "../../assets/backgroundLeft.png";
 import image from "../../assets/image.png";
 import NotificationModal from "../../common/NotificationModal";
 import CheckConnection from "../../common/CheckConnection";
-import { useDispatch, useSelector } from 'react-redux';
-import { toggleTheme } from '../../stores/themeSlice';
-import type { RootState } from '../../stores/store';
+import { useDispatch, useSelector } from "react-redux";
+import { toggleTheme } from "../../stores/themeSlice";
+import type { RootState } from "../../stores/store";
+import type { ILoginPayload } from "../../types/interfaces/IWebSocketEvent";
 
 export default function Login() {
   const [userName, setUserName] = useState("");
@@ -25,10 +26,14 @@ export default function Login() {
 
   const getThemeIcon = () => {
     switch (theme) {
-      case 'light': return '☀️';
-      case 'dark': return '🌙';
-      case 'auto': return '🔄';
-      default: return '☀️';
+      case "light":
+        return "☀️";
+      case "dark":
+        return "🌙";
+      case "auto":
+        return "🔄";
+      default:
+        return "☀️";
     }
   };
 
@@ -38,7 +43,7 @@ export default function Login() {
       return;
     }
 
-    const loginPayload = {
+    const loginPayload: ILoginPayload = {
       action: "onchat",
       data: {
         event: "LOGIN",
@@ -96,10 +101,14 @@ export default function Login() {
         <div className="w-[30%] p-5 flex flex-col rounded-lg border-[var(--border-primary)] border-2 shadow-2xl m-2 h-full bg-[var(--bg-primary)]">
           <div className="flex gap-3 items-center mb-4">
             <img src={image} className="w-12 h-12" alt="LogoNLU" />
-            <div className="flex items-center text-2xl text-[var(--text-primary)]">NLU</div>
+            <div className="flex items-center text-2xl text-[var(--text-primary)]">
+              NLU
+            </div>
           </div>
           <div className="flex flex-col flex-1 h-full gap-4">
-            <div className="font-medium text-[var(--text-primary)]">Rất vui được gặp lại bạn</div>
+            <div className="font-medium text-[var(--text-primary)]">
+              Rất vui được gặp lại bạn
+            </div>
             <div className="flex font-medium text- flex-col">
               <div className="flex flex-col mt-4">
                 <label
@@ -111,7 +120,7 @@ export default function Login() {
                 <input
                   type="text"
                   className="mt-1 p-2 w-full rounded-md pr-10 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border border-[var(--border-primary)]"
-                  placeholder="Username"
+                  placeholder="Tên tài khoản"
                   value={userName}
                   onChange={(event) => setUserName(event.target.value)}
                 />
@@ -127,7 +136,7 @@ export default function Login() {
                   <input
                     type="password"
                     id="password"
-                    placeholder="Enter your Password"
+                    placeholder="Nhập mật khẩu"
                     required
                     name="password"
                     className="mt-1 p-2 w-full rounded-md pr-10 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border border-[var(--border-primary)]"
@@ -143,25 +152,6 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  placeholder="Your password"
-                  className="w-4 h-4 text-blue-600 border-gray-200 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="block ml-2 text-sm text-[var(--text-secondary)]"
-                >
-                  {" "}
-                  Nhớ Mật Khẩu{" "}
-                </label>
-              </div>
-            </div>
-
             <button
               className="bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] p-2 mt-3 rounded-md text-white font-medium transition-colors"
               onClick={handleSignIn}
@@ -169,15 +159,24 @@ export default function Login() {
               Đăng Nhập
             </button>
             <div className="flex justify-center gap-3">
-              <div className="text-sm text-[var(--text-secondary)]">Bạn chưa có tài khoản?</div>
-              <Link to="/register" className="text-[var(--accent-primary)] hover:text-[var(--accent-hover)] text-sm transition-colors">
+              <div className="text-sm text-[var(--text-secondary)]">
+                Bạn chưa có tài khoản?
+              </div>
+              <Link
+                to="/register"
+                className="text-[var(--accent-primary)] hover:text-[var(--accent-hover)] text-sm transition-colors"
+              >
                 Đăng Ký
               </Link>
             </div>
           </div>
           <div className="flex justify-between">
-            <div className="font-bold text-sm text-[var(--text-primary)]">Nhóm</div>
-            <div className="font-bold text-sm text-[var(--text-primary)]">WebChat</div>
+            <div className="font-bold text-sm text-[var(--text-primary)]">
+              Nhóm
+            </div>
+            <div className="font-bold text-sm text-[var(--text-primary)]">
+              WebChat
+            </div>
           </div>
         </div>
       </div>

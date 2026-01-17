@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchLinkPreview } from "../services/linkPreviewService";
+import  fetchLinkPreview  from "../services/linkPreviewService";
 import { FileText } from "lucide-react";
 
 const CARD_WIDTH = "w-full max-w-[300px]"; 

@@ -5,6 +5,7 @@ import wSocket from "../../../utils/wSocket";
 import { selectIsOnline } from "../../../stores/onlineStatusSlice";
 import UserProfileModal from "../../profile/UserProfileModal";
 import { getUserProfile } from "../../../services/firebaseProfileService";
+import type { ICheckUserOnlinePayload } from "../../../types/interfaces/IWebSocketEvent";
 
 export default function ChatMainHeader() {
   const { name, type } = useParams();
@@ -19,27 +20,29 @@ export default function ChatMainHeader() {
 
     // Chỉ check online status và fetch avatar khi mở chat với người (type === 0)
     if (name && isPerson) {
-      const checkOnlinePayload = {
+      const checkOnlinePayload: ICheckUserOnlinePayload = {
         action: "onchat",
         data: {
           event: "CHECK_USER_ONLINE",
           data: {
-            user: name
-          }
-        }
+            user: name,
+          },
+        },
       };
       wSocket.send(JSON.stringify(checkOnlinePayload));
 
       // Fetch avatar của người đang chat
-      getUserProfile(name).then(profile => {
-        if (profile?.avatar) {
-          setPartnerAvatar(profile.avatar);
-        } else {
-          setPartnerAvatar(""); // Đảm bảo reset nếu không có avatar
-        }
-      }).catch(() => {
-        setPartnerAvatar(""); // Reset nếu có lỗi
-      });
+      getUserProfile(name)
+        .then((profile) => {
+          if (profile?.avatar) {
+            setPartnerAvatar(profile.avatar);
+          } else {
+            setPartnerAvatar(""); // Đảm bảo reset nếu không có avatar
+          }
+        })
+        .catch(() => {
+          setPartnerAvatar(""); // Reset nếu có lỗi
+        });
     }
   }, [name, isPerson]);
 
@@ -47,7 +50,8 @@ export default function ChatMainHeader() {
     setShowProfileModal(true);
   };
 
-  const isAvatarImage = isPerson && partnerAvatar && partnerAvatar.startsWith('data:image/');
+  const isAvatarImage =
+    isPerson && partnerAvatar && partnerAvatar.startsWith("data:image/");
 
   return (
     <>
@@ -73,9 +77,11 @@ export default function ChatMainHeader() {
             {/* Chỉ hiển thị trạng thái online cho người (type === 0) */}
             {isPerson && (
               <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}
+                ></div>
                 <span className="text-xs text-[var(--text-muted)]">
-                  {isOnline ? 'Trực tuyến' : 'Không hoạt động'}
+                  {isOnline ? "Trực tuyến" : "Không hoạt động"}
                 </span>
               </div>
             )}
@@ -88,8 +94,18 @@ export default function ChatMainHeader() {
               onClick={handleViewProfile}
               className="px-4 py-2 text-[var(--accent-primary)] hover:bg-[var(--accent-light)] rounded-md flex items-center gap-2 font-medium transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
               </svg>
               Hồ sơ
             </button>

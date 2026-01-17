@@ -14,6 +14,7 @@ import type { ITypingStatus } from "../../../types/interfaces/ITypingStatus";
 import { hasFile } from "../../../services/clipboardServices";
 import { generateId } from "../../../helpers/StringHelper";
 import type { IClipboardItem } from "../../../types/interfaces/IClipboard";
+import type { ISendChatPayload } from "../../../types/interfaces/IWebSocketEvent";
 
 interface Props {
   setMessages: (updater: (prev: IChatMessage[]) => IChatMessage[]) => void;
@@ -46,11 +47,11 @@ export default function ChatMainInput({
   // Handle Emoji Click
   const toBase64 = (str: string) => {
     return window.btoa(unescape(encodeURIComponent(str)));
-  }
+  };
 
   const fromBase64 = (b64: string) => {
     return decodeURIComponent(escape(window.atob(b64)));
-  }
+  };
 
   const onEmojiClick = (emojiData: EmojiClickData) => {
     const emoji = emojiData.emoji;
@@ -109,7 +110,7 @@ export default function ChatMainInput({
     };
     messageList.push(typingStatus);
 
-    const messagePayload = {
+    const messagePayload: ISendChatPayload = {
       action: "onchat",
       data: {
         event: "SEND_CHAT",
@@ -284,8 +285,7 @@ export default function ChatMainInput({
       }
     }
 
-
-    const messagePayload = {
+    const messagePayload: ISendChatPayload = {
       action: "onchat",
       data: {
         event: "SEND_CHAT",
@@ -311,7 +311,7 @@ export default function ChatMainInput({
       } as IChatMessage,
       ...prev,
     ]);
-    
+
     setMessage("");
     clearAllFiles();
   };
