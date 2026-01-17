@@ -18,7 +18,7 @@ import { getUserAvatars } from "../../../services/firebaseProfileService";
 import { useDispatch } from "react-redux";
 import { setRecipients } from "../../../stores/recipientsSlice";
 import type { IGetUserListPayload } from "../../../types/interfaces/IWebSocketEvent";
-import { formatShortTime } from "../../../helpers/StringHelper";
+import { formatShortTime, generateId } from "../../../helpers/StringHelper";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -218,7 +218,7 @@ const ChatSidebar = () => {
         {filteredMessages.length > 0 ? (
           filteredMessages.map((msg) => (
             <MessageItem
-              key={msg.actionTime}
+              key={msg.actionTime + generateId()}
               message={{
                 name: msg.name,
                 avatar: msg.avatar || (msg.type === 1 ? "👥" : "👨‍💼"), // Sử dụng avatar thực, fallback về emoji

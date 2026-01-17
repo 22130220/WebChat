@@ -31,8 +31,26 @@ export const handleSendChat = (data: any, pubSub: any) => {
                 console.warn("Failed to parse mes field", e);
                 if (data.data.type === 1) {
                     pubSub.publish(`receive_chat:${data.data.to}`, data);
+                    showMessageNotification(
+                        `Tin nhắn mới từ ${data.data.to}`,
+                        data.data.mes,
+                        data.data.to,
+                        {
+                            icon: reactSvg,
+                            navigateTo: `/chat/${data.data.to}/type/${data.data.type}`,
+                        }
+                    );
                 } else if (data.data.type === 0) {
                     pubSub.publish(`receive_chat:${data.data.name}`, data);
+                    showMessageNotification(
+                        `Tin nhắn mới từ ${data.data.name}`,
+                        data.data.mes,
+                        data.data.to,
+                        {
+                            icon: reactSvg,
+                            navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
+                        }
+                    );
                 }
                 return;
             }
@@ -85,25 +103,25 @@ async function callNotification(data: any, otherItems: any) {
     if (data.data.mes == null) return;
     for (const item of otherItems) {
         if (item.type === "TYPING_STATUS") continue;
-        const avatar = await getUserAvatars([data.data.to])
+        const avatar = await getUserAvatars([data.data.name])
         if (item.type === "IMAGE") {
             showMessageNotification(
-                `Tin nhắn mới từ ${data.data.to}`,
+                `Tin nhắn mới từ ${data.data.name}`,
                 "Hình ảnh",
                 data.data.name,
                 {
-                    icon: avatar.get(data.data.to) || reactSvg,
+                    icon: avatar.get(data.data.name) || reactSvg,
                     navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
                 }
             );
         }
         else {
             showMessageNotification(
-                `Tin nhắn mới từ ${data.data.to}`,
+                `Tin nhắn mới từ ${data.data.name}`,
                 safeDecodeURIComponent(item.content),
                 data.data.name,
                 {
-                    icon: avatar.get(data.data.to) || reactSvg,
+                    icon: avatar.get(data.data.name) || reactSvg,
                     navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
                 }
             );
