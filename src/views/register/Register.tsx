@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useEvent } from "../../hooks/useEvent";
 import wSocket from "../../utils/wSocket";
 import NotificationModal from "../../common/NotificationModal";
+import type { IRegisterPayload } from "../../types/interfaces/IWebSocketEvent";
+import { PATH_CONSTRAINT } from "../../routers";
 
 export default function Register() {
   const [userName, setUserName] = useState("");
@@ -13,7 +15,7 @@ export default function Register() {
   const [message, setMessage] = useState("Bạn đã đăng ký thành công.");
   const navigate = useNavigate();
 
-  const payLoadRegister = {
+  const payLoadRegister: IRegisterPayload = {
     action: "onchat",
     data: {
       event: "REGISTER",
@@ -35,7 +37,7 @@ export default function Register() {
   useEvent("register_success", registerSuccess);
 
   function returnLogin() {
-    navigate("/login");
+    navigate(PATH_CONSTRAINT.LOGIN);
   }
 
   function registerSuccess() {
@@ -69,7 +71,7 @@ export default function Register() {
               <input
                 type="text"
                 className="mt-1 p-2 w-full bg-[#F2F2F2] rounded-md pr-10"
-                placeholder="Username"
+                placeholder="Tên tài khoản"
                 onChange={(e) => setUserName(e.target.value)}
               />
             </div>
@@ -81,7 +83,7 @@ export default function Register() {
               <input
                 type="password"
                 id="password"
-                placeholder="Enter your Password"
+                placeholder="Nhập mật khẩu"
                 required
                 name="password"
                 className="mt-1 p-2 w-full bg-[#F2F2F2] rounded-md pr-10"

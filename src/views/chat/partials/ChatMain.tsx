@@ -9,7 +9,11 @@ import { useEvent } from "../../../hooks/useEvent";
 import { useClipboard } from "../../../hooks/useClipboard";
 import { Upload } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { setGroupMembers, clearGroupMembers } from "../../../stores/groupMembersSlice";
+import {
+  setGroupMembers,
+  clearGroupMembers,
+} from "../../../stores/groupMembersSlice";
+import type { IGetChatMesPayload } from "../../../types/interfaces/IWebSocketEvent";
 
 const ChatMain: React.FC = () => {
   const { name, type } = useParams();
@@ -33,7 +37,7 @@ const ChatMain: React.FC = () => {
     setMessages([]);
     SetPage(1);
     setCanLoadingMore(true);
-    
+
     // Clear group members khi chuyển sang chat cá nhân (type = 0)
     if (Number(type) === 0) {
       dispatch(clearGroupMembers());
@@ -45,7 +49,7 @@ const ChatMain: React.FC = () => {
     if (canLoadingMove === false) return;
     const typeEvent =
       Number(type) === 1 ? "GET_ROOM_CHAT_MES" : "GET_PEOPLE_CHAT_MES";
-    const getPeopleChatMessages = {
+    const getPeopleChatMessages: IGetChatMesPayload = {
       action: "onchat",
       data: {
         event: typeEvent,
@@ -74,10 +78,12 @@ const ChatMain: React.FC = () => {
   const setRoomChatMess = (data: any) => {
     // Lưu userList vào Redux store nếu là nhóm
     if (data.data.userList && Array.isArray(data.data.userList)) {
-      dispatch(setGroupMembers({
-        members: data.data.userList,
-        roomName: data.data.name || name || ""
-      }));
+      dispatch(
+        setGroupMembers({
+          members: data.data.userList,
+          roomName: data.data.name || name || "",
+        }),
+      );
     }
 
     // Xử lý messages như bình thường
@@ -101,7 +107,7 @@ const ChatMain: React.FC = () => {
   const receiveChatEvent = (data: any) => {
     // Lấy username hiện tại
     const currentUser = localStorage.getItem("USER_NAME") || "";
-    
+
     // Chỉ thêm tin nhắn vào giao diện nếu người gửi KHÔNG phải là mình
     // (vì tin nhắn của mình đã được thêm ngay lập tức trong ChatMainInput)
     if (data.data.name !== currentUser) {
@@ -145,7 +151,7 @@ const ChatMain: React.FC = () => {
         <div className="absolute inset-0 bg-blue-500/20 border-2 border-dashed border-blue-500 flex flex-col items-center justify-center z-50 pointer-events-none">
           <Upload className="w-12 h-12 text-blue-500 mb-3" />
           <span className="text-blue-600 font-medium text-lg">
-            Tha file vao day de gui
+            Kéo thả tập tin vào đây để tải lên
           </span>
         </div>
       )}

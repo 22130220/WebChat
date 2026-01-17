@@ -19,6 +19,7 @@ export default function ChatMainPartial({
   messages,
   setPageUp,
 }: IChatMainProps) {
+  const { name, type } = useParams();
   const username = localStorage.getItem("USER_NAME") || "";
   const { name: partnerName } = useParams();
   const [avatarMap, setAvatarMap] = useState<Map<string, string>>(new Map());
@@ -191,7 +192,14 @@ export default function ChatMainPartial({
           : [];
         return filtered.length > 0 ? filtered : [];
       } catch (error) {
-        return [];
+        const patch: IMessageDetail = {
+          type: "TEXT",
+          content: msg.mes,
+          sender: name ?? "",
+          to: username,
+          timestamp: "",
+        };
+        return [patch];
       }
     });
   }, [messages]);

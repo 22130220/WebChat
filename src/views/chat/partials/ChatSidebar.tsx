@@ -17,6 +17,8 @@ import {
 import { getUserAvatars } from "../../../services/firebaseProfileService";
 import { useDispatch } from "react-redux";
 import { setRecipients } from "../../../stores/recipientsSlice";
+import type { IGetUserListPayload } from "../../../types/interfaces/IWebSocketEvent";
+import { formatShortTime, generateId } from "../../../helpers/StringHelper";
 
 const ChatSidebar = () => {
   const { name, type } = useParams();
@@ -28,7 +30,7 @@ const ChatSidebar = () => {
 
   const fetchUserList = () => {
     console.log("Requesting user list");
-    const getUserListPayload = {
+    const getUserListPayload: IGetUserListPayload = {
       action: "onchat",
       data: {
         event: "GET_USER_LIST",
@@ -54,19 +56,6 @@ const ChatSidebar = () => {
     }
   }, [messages, name, type]);
 
-  // function fetchUserList() {
-  //   console.log("ChatSidebar mounted, requesting user list");
-  //   const getUserListPayload = {
-  //     action: "onchat",
-  //     data: {
-  //       event: "GET_USER_LIST",
-  //     },
-  //   };
-  //   wSocket.send(JSON.stringify(getUserListPayload));
-  // }
-  //
-  // useEvent("getUserList", fetchUserList);
-
   async function getUserListHandler(data: any) {
     console.log("Received user list:", data);
 
@@ -77,34 +66,34 @@ const ChatSidebar = () => {
       try {
         // Lấy contacts từ Firebase
         const firebaseUsers = await getUserContacts(currentUser);
-        
+
         // Merge backend data với Firebase data
         const mergedUsers = mergeUserLists(backendUsers, firebaseUsers);
-        
+
         console.log("Merged user list:", {
           backend: backendUsers.length,
           firebase: firebaseUsers.length,
           merged: mergedUsers.length,
         });
-        
+
         // Fetch avatars cho tất cả users (chỉ người dùng, không phải nhóm)
-        const individualUsers = mergedUsers.filter(user => user.type === 0);
+        const individualUsers = mergedUsers.filter((user) => user.type === 0);
         if (individualUsers.length > 0) {
-          const usernames = individualUsers.map(user => user.name);
+          const usernames = individualUsers.map((user) => user.name);
           const avatarMap = await getUserAvatars(usernames);
-          
+
           // Cập nhật avatar thực vào messages
-          const updatedUsers = mergedUsers.map(user => {
+          const updatedUsers = mergedUsers.map((user) => {
             if (user.type === 0 && avatarMap.has(user.name)) {
               const realAvatar = avatarMap.get(user.name);
               return {
                 ...user,
-                avatar: realAvatar || user.avatar
+                avatar: realAvatar || user.avatar,
               };
             }
             return user;
           });
-          
+
           setMessages(updatedUsers);
         } else {
           setMessages(mergedUsers);
@@ -124,32 +113,39 @@ const ChatSidebar = () => {
   // Tự động thêm người gửi vào user list và lưu vào Firebase
   const handleReceiveNewMessage = async (data: any) => {
     console.log("Received new message:", data.data);
-    
+
     const messageType = data.data.type;
-    const newActionTime = data.data.createAt || new Date().toLocaleString('vi-VN');
+    const newActionTime =
+      data.data.createAt || new Date().toLocaleString("vi-VN");
     const contactName = messageType === 1 ? data.data.to : data.data.name;
-    
-    console.log(`Processing message for contact: ${contactName} (type: ${messageType})`);
-    
-    const existingUserIndex = messages.findIndex(
-      (msg) => msg.name === contactName && msg.type === messageType
+
+    console.log(
+      `Processing message for contact: ${contactName} (type: ${messageType})`,
     );
-    
+
+    const existingUserIndex = messages.findIndex(
+      (msg) => msg.name === contactName && msg.type === messageType,
+    );
+
     if (existingUserIndex !== -1) {
-      console.log(`Moving ${contactName} (type: ${messageType}) to top of list`);
-      
+      console.log(
+        `Moving ${contactName} (type: ${messageType}) to top of list`,
+      );
+
       setMessages((prev) => {
         const existingUser = prev[existingUserIndex];
-        const filteredList = prev.filter((_, index) => index !== existingUserIndex);
-        
+        const filteredList = prev.filter(
+          (_, index) => index !== existingUserIndex,
+        );
+
         const updatedUser: IMessage = {
           ...existingUser,
           actionTime: newActionTime,
         };
-        
+
         return [updatedUser, ...filteredList];
       });
-      
+
       const currentUser = localStorage.getItem("USER_NAME");
       if (currentUser) {
         try {
@@ -166,7 +162,7 @@ const ChatSidebar = () => {
       }
     } else {
       console.log(`Adding ${contactName} (type: ${messageType}) to user list`);
-      
+
       // Fetch avatar thực cho user mới (chỉ cho người dùng, không phải nhóm)
       let userAvatar = messageType === 1 ? "👥" : "👨‍💼";
       if (messageType === 0) {
@@ -180,14 +176,14 @@ const ChatSidebar = () => {
           console.error("Error fetching avatar:", error);
         }
       }
-      
+
       const newUser: IMessage = {
         name: contactName,
         avatar: userAvatar,
         actionTime: newActionTime,
         type: messageType,
       };
-      
+
       // Lưu vào Firebase để persist và đồng bộ giữa thiết bị
       const currentUser = localStorage.getItem("USER_NAME");
       if (currentUser) {
@@ -198,7 +194,7 @@ const ChatSidebar = () => {
           console.error("Error saving to Firebase:", error);
         }
       }
-      
+
       setMessages((prev) => [newUser, ...prev]);
     }
   };
@@ -247,7 +243,6 @@ const ChatSidebar = () => {
     fetchUserList();
   };
 
-  
   useEvent("refreshUserList", () => {
     console.log("Message sent, refreshing user list");
     fetchUserList();
@@ -265,11 +260,11 @@ const ChatSidebar = () => {
         {filteredMessages.length > 0 ? (
           filteredMessages.map((msg) => (
             <MessageItem
-              key={msg.actionTime}
+              key={msg.actionTime + generateId()}
               message={{
                 name: msg.name,
                 avatar: msg.avatar || (msg.type === 1 ? "👥" : "👨‍💼"), // Sử dụng avatar thực, fallback về emoji
-                actionTime: msg.actionTime,
+                actionTime: formatShortTime(msg.actionTime),
                 type: msg.type,
               }}
               activeMessageName={name || ""}
@@ -286,10 +281,10 @@ const ChatSidebar = () => {
 
       {showCreateRoom && (
         <CreateRoomPanel
-         onClose={() => setShowCreateRoom(false)}
-         onRoomCreated={handleRoomCreated}
-         onJoinRoom={handleJoinRoom}
-         />
+          onClose={() => setShowCreateRoom(false)}
+          onRoomCreated={handleRoomCreated}
+          onJoinRoom={handleJoinRoom}
+        />
       )}
     </div>
   );

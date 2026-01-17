@@ -1,5 +1,7 @@
+import { WSOCKET_EVENTS } from "../common/constants";
 import { setConnect, setIsRelogin } from "../stores/settingSlice";
 import { store } from "../stores/store";
+import type { IReLoginPayload } from "../types/interfaces/IWebSocketEvent";
 import pubSub from "./eventBus";
 import { GLOBAL_EVENT } from "./globalEvents";
 import { handleSendChat } from "./handleSendChat";
@@ -31,49 +33,49 @@ function createSocket(path: string) {
     switch (data.status) {
       case "success": {
         switch (data.event) {
-          case "REGISTER": {
+          case WSOCKET_EVENTS.REGISTER: {
             pubSub.publish("register_success", data);
             break;
           }
-          case "LOGIN": {
+          case WSOCKET_EVENTS.LOGIN: {
             pubSub.publish("login_success", data);
             break;
           }
-          case "RE_LOGIN": {
+          case WSOCKET_EVENTS.RE_LOGIN: {
             store.dispatch(setIsRelogin(true));
             pubSub.publish("relogin_success", data)
             pubSub.publish("getUserList", data);
             break;
           }
-          case "GET_USER_LIST": {
+          case WSOCKET_EVENTS.GET_USER_LIST: {
             pubSub.publish("user_list_success", data)
             break;
           }
-          case "GET_PEOPLE_CHAT_MES": {
+          case WSOCKET_EVENTS.GET_PEOPLE_CHAT_MES: {
             pubSub.publish("get_people_chat_messages_success", data)
             break;
           }
-          case "GET_ROOM_CHAT_MES": {
+          case WSOCKET_EVENTS.GET_ROOM_CHAT_MES: {
             pubSub.publish("get_room_chat_messages_success", data)
             break;
           }
-          case "SEND_CHAT": {
+          case WSOCKET_EVENTS.SEND_CHAT: {
             handleSendChat(data, pubSub);
             break;
           }
-          case "CREATE_ROOM": {
+          case WSOCKET_EVENTS.CREATE_ROOM: {
             pubSub.publish("create_room_success", data)
             break;
           }
-          case "JOIN_ROOM": {
+          case WSOCKET_EVENTS.JOIN_ROOM: {
             pubSub.publish("join_room_success", data)
             break;
           }
-          case "CHECK_USER_EXIST": {
+          case WSOCKET_EVENTS.CHECK_USER_EXIST: {
             pubSub.publish("check_user_exist_success", data)
             break;
           }
-          case "CHECK_USER_ONLINE": {
+          case WSOCKET_EVENTS.CHECK_USER_ONLINE: {
             pubSub.publish("check_user_online_success", data)
             break;
           }
@@ -84,27 +86,31 @@ function createSocket(path: string) {
         // TODO: Không chắc là mất kêt nối ở đây có đúng không
         // store.dispatch(setConnect(false));
         switch (data.event) {
-          case "RE_LOGIN": {
+          case WSOCKET_EVENTS.RE_LOGIN: {
             store.dispatch(setIsRelogin(false));
             window.localStorage.removeItem("RE_LOGIN_CODE");
             window.localStorage.removeItem("USER_NAME");
             window.location.href = "/login";
             break;
           }
-          case "CREATE_ROOM": {
+          case WSOCKET_EVENTS.CREATE_ROOM: {
             pubSub.publish("create_room_error", data)
             break;
           }
-          case "AUTH": {
+          case WSOCKET_EVENTS.REGISTER: {
+            pubSub.publish("register_error", data);
+            break;
+          }
+          case WSOCKET_EVENTS.AUTH: {
             // Xử lý lỗi xác thực (ví dụ: User not Login)
             pubSub.publish("auth_error", data)
             break;
           }
-          case "JOIN_ROOM": {
+          case WSOCKET_EVENTS.JOIN_ROOM: {
             pubSub.publish("join_room_error", data)
             break;
           }
-          case "CHECK_USER_EXIST": {
+          case WSOCKET_EVENTS.CHECK_USER_EXIST: {
             pubSub.publish("check_user_exist_error", data)
             break;
           }
@@ -188,7 +194,7 @@ function checkUserCode() {
   const USER_NAME = localStorage.getItem("USER_NAME");
 
   if (RE_LOGIN_CODE && USER_NAME) {
-    const reLoginPayload = {
+    const reLoginPayload: IReLoginPayload = {
       action: "onchat",
       data: {
         event: "RE_LOGIN",

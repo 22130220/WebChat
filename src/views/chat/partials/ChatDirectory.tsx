@@ -11,8 +11,17 @@ import { getUserAvatars } from "../../../services/firebaseProfileService";
 import UserProfileModal from "../../profile/UserProfileModal";
 
 const isMedia = (file: any) => {
-  const ext = file.name.split('.').pop().toLowerCase();
-  const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'mkv'];
+  const ext = file.name.split(".").pop().toLowerCase();
+  const mediaExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "mp4",
+    "mov",
+    "avi",
+    "mkv",
+  ];
   return mediaExtensions.includes(ext);
 };
 
@@ -21,7 +30,7 @@ const ChatDirectory = () => {
   const receiver = params.name;
   const type = params.type;
 
-  const [previewFiles, setPreviewFiles] = useState<any[]>([])
+  const [previewFiles, setPreviewFiles] = useState<any[]>([]);
   const [allFiles, setAllFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -32,15 +41,19 @@ const ChatDirectory = () => {
   const isGroup = Number(type) === 1;
 
   // State để lưu avatars của các thành viên
-  const [memberAvatars, setMemberAvatars] = useState<Map<string, string>>(new Map());
+  const [memberAvatars, setMemberAvatars] = useState<Map<string, string>>(
+    new Map(),
+  );
 
   // State để quản lý profile modal
-  const [selectedMemberUsername, setSelectedMemberUsername] = useState<string | null>(null);
+  const [selectedMemberUsername, setSelectedMemberUsername] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (receiver) {
       setLoading(true);
-      fetchFiles(5, receiver).then(files => {
+      fetchFiles(5, receiver).then((files) => {
         setPreviewFiles(files || []);
         setLoading(false);
       });
@@ -50,8 +63,8 @@ const ChatDirectory = () => {
   // Fetch avatars khi groupMembers thay đổi
   useEffect(() => {
     if (groupMembers.length > 0) {
-      const usernames = groupMembers.map(member => member.name);
-      getUserAvatars(usernames).then(avatarMap => {
+      const usernames = groupMembers.map((member) => member.name);
+      getUserAvatars(usernames).then((avatarMap) => {
         setMemberAvatars(avatarMap);
       });
     }
@@ -62,7 +75,7 @@ const ChatDirectory = () => {
     setShowModal(true);
     setActiveTab("MEDIA");
     setLoading(true);
-    fetchFiles(undefined, receiver).then(files => {
+    fetchFiles(undefined, receiver).then((files) => {
       setAllFiles(files || []);
       setLoading(false);
     });
@@ -73,13 +86,13 @@ const ChatDirectory = () => {
     if (!data) return;
     if (data.sender === receiver || data.receiver === receiver) {
       setLoading(true);
-      fetchFiles(5, receiver).then(files => {
+      fetchFiles(5, receiver).then((files) => {
         setPreviewFiles(files || []);
         setLoading(false);
       });
     }
     if (showModal) {
-      fetchFiles(undefined, receiver).then(files => {
+      fetchFiles(undefined, receiver).then((files) => {
         setAllFiles(files || []);
         setLoading(false);
       });
@@ -88,7 +101,7 @@ const ChatDirectory = () => {
 
   const { media, nonMedia } = useMemo(() => {
     const media = allFiles.filter(isMedia);
-    const nonMedia = allFiles.filter(f => !isMedia(f));
+    const nonMedia = allFiles.filter((f) => !isMedia(f));
     return { media, nonMedia };
   }, [allFiles]);
 
@@ -105,7 +118,9 @@ const ChatDirectory = () => {
       {isGroup && (
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm text-[var(--text-primary)]">Thành viên</h3>
+            <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+              Thành viên
+            </h3>
             <span className="text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
               {groupMembers.length}
             </span>
@@ -120,13 +135,15 @@ const ChatDirectory = () => {
                     id: member.id,
                     name: member.name,
                     role: "",
-                    avatar: memberAvatars.get(member.name) || "👨‍💼"
+                    avatar: memberAvatars.get(member.name) || "👨‍💼",
                   }}
                   onClick={() => setSelectedMemberUsername(member.name)}
                 />
               ))
             ) : (
-              <p className="text-xs text-[var(--text-muted)]">Đang tải thành viên...</p>
+              <p className="text-xs text-[var(--text-muted)]">
+                Đang tải thành viên...
+              </p>
             )}
           </div>
         </div>
@@ -135,7 +152,9 @@ const ChatDirectory = () => {
       {/* Files */}
       <div className="p-4 border-t border-[var(--border-primary)]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-sm text-[var(--text-primary)]">Tập tin</h3>
+          <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+            Tập tin
+          </h3>
           <span className="text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
             {allFiles.length}
           </span>
@@ -145,35 +164,41 @@ const ChatDirectory = () => {
           {loading ? (
             <p className="text-xs text-[var(--text-muted)]">Đang tải...</p>
           ) : previewFiles.length > 0 ? (
-            previewFiles.map((f) => (
-              <FileItem key={f.id} file={f} />
-            ))
+            previewFiles.map((f) => <FileItem key={f.id} file={f} />)
           ) : (
-            <p className="text-xs text-[var(--text-muted)]">Không có tập tin nào {receiver}</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Không có tập tin nào {receiver}
+            </p>
           )}
         </div>
       </div>
       <div className="border-t border-[var(--border-primary)]  justify-center flex">
-        <button className="p-4 text-center" onClick={() => handleShowAll()}>Xem tất cả</button>
+        <button className="p-4 text-center" onClick={() => handleShowAll()}>
+          Xem tất cả
+        </button>
       </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg w-3/4 h-3/4 p-4 overflow-y-auto">
-
             <div className="flex justify-between mb-4">
               <h2 className="text-lg font-semibold">Tất cả tập tin</h2>
-              <button onClick={() => setShowModal(false)} className="text-red-500">Đóng</button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-red-500"
+              >
+                Đóng
+              </button>
             </div>
             <div className="mb-4 w-full flex">
               <button
-                className={`mr-2 px-4 py-2 w-[50%] rounded ${activeTab === "MEDIA" ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`mr-2 px-4 py-2 w-[50%] rounded ${activeTab === "MEDIA" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}
                 onClick={() => setActiveTab("MEDIA")}
               >
                 Ảnh & Video
               </button>
               <button
-                className={`px-4 py-2 rounded w-[50%] ${activeTab === "FILES" ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`px-4 py-2 rounded w-[50%] ${activeTab === "FILES" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}
                 onClick={() => setActiveTab("FILES")}
               >
                 Tập tin
@@ -184,20 +209,18 @@ const ChatDirectory = () => {
                 <p className="text-xs text-[var(--text-muted)]">Đang tải...</p>
               ) : activeTab === "MEDIA" ? (
                 media.length > 0 ? (
-                  media.map((f) => (
-                    <FileItem key={f.id} file={f} />
-                  ))
+                  media.map((f) => <FileItem key={f.id} file={f} />)
                 ) : (
-                  <p className="text-xs text-[var(--text-muted)]">Không có tập tin media nào.</p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    Không có tập tin media nào.
+                  </p>
                 )
+              ) : nonMedia.length > 0 ? (
+                nonMedia.map((f) => <FileItem key={f.id} file={f} />)
               ) : (
-                nonMedia.length > 0 ? (
-                  nonMedia.map((f) => (
-                    <FileItem key={f.id} file={f} />
-                  ))
-                ) : (
-                  <p className="text-xs text-[var(--text-muted)]">Không có tập tin nào.</p>
-                )
+                <p className="text-xs text-[var(--text-muted)]">
+                  Không có tập tin nào.
+                </p>
               )}
             </div>
           </div>
@@ -212,9 +235,7 @@ const ChatDirectory = () => {
         />
       )}
     </div>
-  )
+  );
 };
 
 export default ChatDirectory;
-
-

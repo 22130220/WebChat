@@ -1,5 +1,7 @@
 import { showMessageNotification } from "../services/messageNotificationService";
 import reactSvg from "../assets/react.svg";
+import { safeDecodeURIComponent } from "../helpers/StringHelper";
+import { getUserAvatars } from "../services/firebaseProfileService";
 
 export const handleSendChat = (data: any, pubSub: any) => {
     const channel = getPublishChannel(data);
@@ -23,7 +25,35 @@ export const handleSendChat = (data: any, pubSub: any) => {
         const raw = data.data?.mes;
         let parsed = null;
         if (raw) {
-            parsed = JSON.parse(raw);
+            try {
+                parsed = JSON.parse(raw);
+            } catch (e) {
+                console.warn("Failed to parse mes field", e);
+                if (data.data.type === 1) {
+                    pubSub.publish(`receive_chat:${data.data.to}`, data);
+                    showMessageNotification(
+                        `Tin nhắn mới từ ${data.data.to}`,
+                        data.data.mes,
+                        data.data.to,
+                        {
+                            icon: reactSvg,
+                            navigateTo: `/chat/${data.data.to}/type/${data.data.type}`,
+                        }
+                    );
+                } else if (data.data.type === 0) {
+                    pubSub.publish(`receive_chat:${data.data.name}`, data);
+                    showMessageNotification(
+                        `Tin nhắn mới từ ${data.data.name}`,
+                        data.data.mes,
+                        data.data.to,
+                        {
+                            icon: reactSvg,
+                            navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
+                        }
+                    );
+                }
+                return;
+            }
         }
 
         if (Array.isArray(parsed)) {
@@ -72,28 +102,29 @@ const getPublishChannel = (data: any) => {
     if (type === 0) return `receive_chat:${name}`;
 }
 
-function callNotification(data: any, otherItems: any) {
+async function callNotification(data: any, otherItems: any) {
     if (data.data.mes == null) return;
     for (const item of otherItems) {
         if (item.type === "TYPING_STATUS") continue;
+        const avatar = await getUserAvatars([data.data.name])
         if (item.type === "IMAGE") {
             showMessageNotification(
-                `Tin nhắn mới từ ${data.data.to}`,
+                `Tin nhắn mới từ ${data.data.name}`,
                 "Hình ảnh",
                 data.data.name,
                 {
-                    icon: reactSvg,
+                    icon: avatar.get(data.data.name) || reactSvg,
                     navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
                 }
             );
         }
         else {
             showMessageNotification(
-                `Tin nhắn mới từ ${data.data.to}`,
-                item.content,
+                `Tin nhắn mới từ ${data.data.name}`,
+                safeDecodeURIComponent(item.content),
                 data.data.name,
                 {
-                    icon: reactSvg,
+                    icon: avatar.get(data.data.name) || reactSvg,
                     navigateTo: `/chat/${data.data.name}/type/${data.data.type}`,
                 }
             );
