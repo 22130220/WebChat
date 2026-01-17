@@ -42,6 +42,7 @@ export const handleSendChat = (data: any, pubSub: any) => {
                     callNotification(cloned, otherItems);
                 } else if (cloned.data.type === 0) {
                     pubSub.publish(`receive_chat:${cloned.data.name}`, cloned);
+                    pubSub.publish(`receive_chat:${cloned.data.to}`, cloned);
                     callNotification(cloned, otherItems);
                 }
             }
@@ -50,6 +51,7 @@ export const handleSendChat = (data: any, pubSub: any) => {
                 pubSub.publish(`receive_chat:${data.data.to}`, data);
             } else if (data.data.type === 0) {
                 pubSub.publish(`receive_chat:${data.data.name}`, data);
+                pubSub.publish(`receive_chat:${data.data.to}`, data);
             }
 
         }
@@ -59,6 +61,7 @@ export const handleSendChat = (data: any, pubSub: any) => {
             pubSub.publish(`receive_chat:${data.data.to}`, data);
         } else if (data.data.type === 0) {
             pubSub.publish(`receive_chat:${data.data.name}`, data);
+            pubSub.publish(`receive_chat:${data.data.to}`, data);
         }
     }
 };

@@ -5,6 +5,7 @@ import RecipientSelector from './RecipientSelector';
 import { X, Send } from 'lucide-react';
 import wSocket from '../../../utils/wSocket';
 import ToastSuccess from '../../../components/ToastSuccess';
+import pubSub from '../../../utils/eventBus';
 
 interface ForwardMessageModalProps {
   message: IMessageDetail;
@@ -53,7 +54,7 @@ const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           timestamp: new Date().toISOString(),
           originalSender: message.originalSender || message.sender,
           originalTimestamp: message.originalTimestamp || message.timestamp,
-          originalType: message.originalType || message.type as "TEXT" | "IMAGE",
+          originalType: (message.originalType || message.type) as "TEXT" | "IMAGE" | "FORWARDED" | "VIDEO" | "AUDIO" | "FILE" | "DOCUMENT" | "PDF",
           forwardedBy: username,
         };
 
@@ -73,6 +74,17 @@ const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
         };
 
         wSocket.send(JSON.stringify(messagePayload));
+
+        const chatMessage = {
+          data: {
+            type: recipient.type,
+            to: recipient.name,
+            name: username,
+            mes: JSON.stringify(messageList),
+            createAt: new Date().toISOString()
+          }
+        };
+        pubSub.publish(`forward_message:${recipient.name}`, chatMessage);
       }
 
       // Hiển thị toast thành công
