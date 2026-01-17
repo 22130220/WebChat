@@ -31,9 +31,46 @@ const MessageContent = ({ msg, isme, onImageClick }: { msg: IMessageDetail; isme
     };
 
     const renderContent = () => {
+        if (msg.type === "FORWARDED" && msg.originalType) {
+            switch (msg.originalType) {
+                case "IMAGE":
+                    return (
+                        <img
+                            src={msg.content}
+                            alt="Forwarded Image"
+                            className={`${MEDIA_STYLE} max-h-[400px]`}
+                            onClick={() => onImageClick(msg.content)}
+                        />
+                    );
+                case "VIDEO":
+                    return (
+                        <video controls className={`${MEDIA_STYLE} max-h-[400px]`}>
+                            <source src={msg.content} type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
+                    );
+                case "AUDIO":
+                    return (
+                        <audio controls className="w-full max-w-[300px] mt-1">
+                            <source src={msg.content} type="audio/mpeg" />
+                            Your browser does not support the audio tag.
+                        </audio>
+                    );
+                case "FILE":
+                case "DOCUMENT":
+                case "PDF":
+                    return (
+                        <div className="-mx-1">
+                            <LinkPreview url={msg.content} isMe={isme} />
+                        </div>
+                    );
+                case "TEXT":
+                default:
+                    return renderTextWithPreview();
+            }
+        }
         switch (msg.type) {
             case "TEXT":
-            case "FORWARDED":
                 return renderTextWithPreview();
             case "IMAGE":
                 return (

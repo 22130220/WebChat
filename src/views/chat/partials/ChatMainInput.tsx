@@ -311,6 +311,11 @@ export default function ChatMainInput({
       } as IChatMessage,
       ...prev,
     ]);
+
+    pubSub.publish("refreshUserList", {
+      receiver: name,
+      type: Number(type),
+    });
     
     setMessage("");
     clearAllFiles();

@@ -116,7 +116,22 @@ const ChatMain: React.FC = () => {
       setMessages((prev) => [rev, ...prev]);
     }
   };
+
+  // Handler riêng cho forward message - luôn cập nhật UI
+  const receiveForwardMessageEvent = (data: any) => {
+    const rev: IChatMessage = {
+      id: Math.floor(Math.random() * 100000000),
+      to: data.data.to,
+      mes: data.data.mes,
+      name: data.data.name,
+      type: data.data.type,
+      createAt: data.data.createAt,
+    };
+    setMessages((prev) => [rev, ...prev]);
+  };
+
   useEvent(`receive_chat:${name}`, receiveChatEvent);
+  useEvent(`forward_message:${name}`, receiveForwardMessageEvent);
   useEvent("get_people_chat_messages_success", setPeopleChatMess);
   useEvent("get_room_chat_messages_success", setRoomChatMess);
 
